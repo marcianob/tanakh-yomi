@@ -504,13 +504,28 @@ body.theme-night .catchup-desc { color:#fbbf24; }
     <button class="close-btn" onclick="togglePanel('settings')">×</button>
   </div>
   <div class="panel-body">
+    <div class="setting-section">Source de traduction</div>
+    <div style="display:flex;gap:5px;margin-bottom:4px">
+      <div class="lang-option active" id="langFr" onclick="setTranslationLang('fr',this)"
+           style="flex:1;padding:9px 8px;border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;text-align:center;transition:all 0.12s;background:var(--accent);color:white;border-color:var(--accent)">
+        🇫🇷 Français<br><span style="font-size:10px;opacity:0.85">Traduction du Rabbinat</span>
+      </div>
+      <div class="lang-option" id="langEn" onclick="setTranslationLang('en',this)"
+           style="flex:1;padding:9px 8px;border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;text-align:center;transition:all 0.12s;color:var(--text)">
+        🇬🇧 English<br><span style="font-size:10px;color:var(--muted)">Sefaria (JPS)</span>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+      Français : Bible du Rabbinat 1899 via Mechon Mamre.<br>English : traduction JPS via Sefaria.
+    </div>
+
     <div class="setting-section">Colonnes visibles</div>
     <div class="setting-row">
       <span class="setting-label">Hébreu (avec nikoud)</span>
       <button class="toggle on" id="togHeb" onclick="toggleCol('Heb',this)"></button>
     </div>
     <div class="setting-row">
-      <span class="setting-label">Traduction française</span>
+      <span class="setting-label">Traduction</span>
       <button class="toggle on" id="togFr" onclick="toggleCol('Fr',this)"></button>
     </div>
     <div class="setting-row">
@@ -792,6 +807,7 @@ let P = loadState() || {
   // current view
   currentBook: 'Joshua',
   currentChapter: 1,
+  translationLang: 'fr',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -1029,37 +1045,116 @@ function updateBreadcrumb() {
 // ═══════════════════════════════════════════════════════
 // LOAD CHAPTER
 // ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// MECHON MAMRE — Traduction du Rabbinat (Français)
+// URL: https://mechon-mamre.org/f/ft/ft{code}{ch2}.htm
+// ═══════════════════════════════════════════════════════
+const MM_CODES = {
+  'Joshua':'06','Judges':'07','I-Samuel':'08','II-Samuel':'09',
+  'I-Kings':'0a','II-Kings':'0b','Isaiah':'0c','Jeremiah':'0d',
+  'Ezekiel':'0e','Hosea':'0f','Joel':'0g','Amos':'0h',
+  'Obadiah':'0i','Jonah':'0j','Micah':'0k','Nahum':'0l',
+  'Habakkuk':'0m','Zephaniah':'0n','Haggai':'0o','Zechariah':'0p',
+  'Malachi':'0q','Psalms':'1a','Proverbs':'1b','Job':'1c',
+  'Song':'1d','Ruth':'1e','Lamentations':'1f','Ecclesiastes':'1g',
+  'Esther':'1h','Daniel':'1i','Ezra':'1j','Nehemiah':'1k',
+  'I-Chronicles':'1l','II-Chronicles':'1m'
+};
+
+// CORS proxy — needed because mechon-mamre doesn't set CORS headers
+// We use allorigins.win which wraps the page content in JSON
+async function fetchMechonMamreFr(bookId, chapter) {
+  const code = MM_CODES[bookId];
+  if (!code) throw new Error('Livre non trouvé dans Mechon Mamre');
+  const ch2 = String(chapter).padStart(2, '0');
+  const targetUrl = `https://mechon-mamre.org/f/ft/ft${code}${ch2}.htm`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+  const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error('Proxy HTTP ' + res.status);
+  const json = await res.json();
+  const html = json.contents || '';
+
+  // Parse — Mechon Mamre French structure:
+  // Each verse: <td class="fr">text</td> or plain <td> with verse text
+  // The page has a table with alternating Hebrew/French rows
+  // French verses are in <td> cells that don't have Hebrew characters
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const verses = [];
+  // Each row has 2 tds: verse number + text (or heb + fr side by side)
+  // Mechon Mamre FR layout: table rows, each with <td class="fr1"> or <td class="fr2">
+  // Actually the layout uses <td> with the verse number then the text
+  // Let's extract all td content and filter by language
+  const tds = doc.querySelectorAll('td');
+  for (const td of tds) {
+    const txt = td.textContent.trim();
+    // Skip very short cells (verse numbers, empty)
+    if (txt.length < 5) continue;
+    // Skip cells that are mostly Hebrew (contain Hebrew Unicode range)
+    const hebChars = (txt.match(/[\u05D0-\u05EA\u05B0-\u05BD]/g) || []).length;
+    const totalChars = txt.replace(/\s/g, '').length;
+    if (hebChars / totalChars > 0.3) continue;
+    // Skip navigation, header cells
+    if (/mechon|mamre|chapitre|chapter|©|javascript/i.test(txt)) continue;
+    // Looks like a French verse
+    if (txt.length > 10) verses.push(txt);
+  }
+
+  if (!verses.length) throw new Error('Aucun verset français trouvé');
+  return verses;
+}
+
 async function loadChapter() {
   document.getElementById('reader').innerHTML = '<div class="loading-msg">Chargement… <span class="spinner"></span></div>';
   document.getElementById('apiBadge').textContent = '● Chargement';
 
-  const demoKey = `${S.book.id}.${S.chapter}`;
+  const demoKey = S.book.id + '.' + S.chapter;
   if (DEMO_TEXTS[demoKey]) {
     setTimeout(()=>{ renderVerses(DEMO_TEXTS[demoKey]); document.getElementById('apiBadge').textContent = '● Démo'; }, 180);
     return;
   }
 
   try {
-    const bookId = S.book.id.replace('-', ' ');
-    const ref = encodeURIComponent(`${bookId} ${S.chapter}`);
-    const res = await fetch(`https://www.sefaria.org/api/texts/${ref}?commentary=0&context=0&pad=0&wrapLinks=0`, { signal: AbortSignal.timeout(7000) });
-    if (!res.ok) throw new Error('HTTP '+res.status);
+    const bookId = S.book.id.replace(/-/g, ' ');
+    const ref = encodeURIComponent(bookId + ' ' + S.chapter);
+    // Always fetch Hebrew from Sefaria
+    const res = await fetch('https://www.sefaria.org/api/texts/' + ref + '?commentary=0&context=0&pad=0&wrapLinks=0', { signal: AbortSignal.timeout(7000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const he = Array.isArray(data.he) ? data.he : [];
-    let fr = [];
-    try {
-      const frRes = await fetch(`https://www.sefaria.org/api/texts/${ref}?lang=fr&commentary=0&context=0&pad=0`, { signal: AbortSignal.timeout(5000) });
-      if (frRes.ok) { const fd = await frRes.json(); if (Array.isArray(fd.text)&&fd.text.length) fr = fd.text; }
-    } catch(e){}
-    if (!fr.length && Array.isArray(data.text)) fr = data.text;
-    if (!he.length) throw new Error('Texte vide');
-    renderVerses({ he, fr, rashi:[] });
-    document.getElementById('apiBadge').textContent = '● Sefaria ✓';
+    if (!he.length) throw new Error('Texte hébreu vide');
+
+    let translation = [];
+    const lang = P.translationLang || 'fr';
+
+    if (lang === 'fr') {
+      // French = Mechon Mamre (Traduction du Rabbinat)
+      try {
+        translation = await fetchMechonMamreFr(S.book.id, S.chapter);
+        document.getElementById('apiBadge').textContent = '● Rabbinat ✓';
+      } catch(e) {
+        console.warn('Mechon Mamre failed:', e.message, '— fallback Sefaria FR');
+        try {
+          const frRes = await fetch('https://www.sefaria.org/api/texts/' + ref + '?lang=fr&commentary=0&context=0&pad=0', { signal: AbortSignal.timeout(5000) });
+          if (frRes.ok) { const fd = await frRes.json(); if (Array.isArray(fd.text) && fd.text.length) translation = fd.text; }
+        } catch(e2){}
+        document.getElementById('apiBadge').textContent = translation.length ? '● Sefaria FR' : '● Sefaria';
+      }
+    } else {
+      // English = Sefaria (JPS / standard)
+      if (Array.isArray(data.text) && data.text.length) translation = data.text;
+      document.getElementById('apiBadge').textContent = '● Sefaria EN ✓';
+    }
+
+    renderVerses({ he, fr: translation, rashi: [] });
   } catch(err) {
-    document.getElementById('reader').innerHTML = `<div class="loading-msg">
-      <p style="margin-bottom:14px">Connexion à Sefaria impossible.<br><span style="font-size:11px;opacity:0.6">${err.message}</span></p>
-      <button onclick="loadDemo()" style="padding:8px 20px;background:var(--accent);color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:var(--font-fr)">Charger démo</button>
-    </div>`;
+    document.getElementById('reader').innerHTML = '<div class="loading-msg">'
+      + '<p style="margin-bottom:14px">Connexion impossible.<br><span style="font-size:11px;opacity:0.6">' + err.message + '</span></p>'
+      + '<button onclick="loadDemo()" style="padding:8px 20px;background:var(--accent);color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:var(--font-fr)">Charger démo</button>'
+      + '</div>';
     document.getElementById('apiBadge').textContent = '● Hors ligne';
   }
 }
@@ -1268,6 +1363,27 @@ function changeSize(type, delta) {
   saveState();
 }
 
+
+function setTranslationLang(lang, el) {
+  P.translationLang = lang;
+  saveState();
+  // update button styles
+  ['langFr','langEn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.style.background = '';
+    btn.style.color = 'var(--text)';
+    btn.style.borderColor = 'var(--border)';
+    btn.classList.remove('active');
+  });
+  if (el) {
+    el.style.background = 'var(--accent)';
+    el.style.color = 'white';
+    el.style.borderColor = 'var(--accent)';
+    el.classList.add('active');
+  }
+  loadChapter();
+}
 function setFont(el) {
   P.hebFont = el.dataset.font;
   document.documentElement.style.setProperty('--font-heb', P.hebFont);
@@ -1393,6 +1509,23 @@ function applySettings() {
   if (!P.showHeb) document.getElementById('togHeb').classList.remove('on');
   if (!P.showFr) document.getElementById('togFr').classList.remove('on');
   if (P.showRashi) document.getElementById('togRashi').classList.add('on');
+  // restore translation lang UI
+  const lang = P.translationLang || 'fr';
+  document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+  const activeLangBtn = document.getElementById(lang === 'fr' ? 'langFr' : 'langEn');
+  if (activeLangBtn) {
+    activeLangBtn.classList.add('active');
+    activeLangBtn.style.background = 'var(--accent)';
+    activeLangBtn.style.color = 'white';
+    activeLangBtn.style.borderColor = 'var(--accent)';
+  }
+  // also style inactive
+  const inactiveBtn = document.getElementById(lang === 'fr' ? 'langEn' : 'langFr');
+  if (inactiveBtn) {
+    inactiveBtn.style.background = '';
+    inactiveBtn.style.color = 'var(--text)';
+    inactiveBtn.style.borderColor = 'var(--border)';
+  }
 }
 
 applySettings();
