@@ -5,693 +5,264 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>תנ"ך Yomi — Plateforme d'étude</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Assistant:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Assistant:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --sidebar-w: 230px;
-    --font-heb: 'Frank Ruhl Libre', serif;
-    --font-fr: 'Assistant', sans-serif;
-    --heb-size: 22px;
-    --fr-size: 15px;
-    --accent: #2d6a4f;
-    --accent-light: rgba(45,106,79,0.12);
-    --bg: #fafaf8;
-    --surface: #f4f4f0;
-    --text: #1c1c1a;
-    --muted: #6b6b65;
-    --border: rgba(0,0,0,0.09);
-    --shadow: 0 2px 16px rgba(0,0,0,0.08);
-  }
-
-  body {
-    font-family: var(--font-fr);
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── THEMES ── */
-  body.theme-sepia {
-    --bg: #f7efe0; --surface: #ede3ce; --text: #3a2e1e;
-    --muted: #7a6545; --accent: #8B5E3C; --accent-light: rgba(139,94,60,0.12);
-    --border: rgba(139,94,60,0.15);
-  }
-  body.theme-night {
-    --bg: #141420; --surface: #1e1e30; --text: #e2e2ef;
-    --muted: #9090b8; --accent: #7b9cda; --accent-light: rgba(123,156,218,0.15);
-    --border: rgba(255,255,255,0.08);
-  }
-
-  /* ── LAYOUT ── */
-  #layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* ── SIDEBAR ── */
-  #sidebar {
-    width: var(--sidebar-w);
-    min-width: var(--sidebar-w);
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: width 0.25s ease;
-  }
-
-  .sidebar-logo {
-    padding: 18px 16px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-
-  .logo-heb {
-    font-family: var(--font-heb);
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--accent);
-  }
-
-  .logo-sub {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .logo-name {
-    font-size: 16px;
-    font-weight: 300;
-    color: var(--text);
-    letter-spacing: 1px;
-  }
-
-  .logo-tagline {
-    font-size: 9px;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-top: 1px;
-  }
-
-  .search-wrap {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    position: relative;
-  }
-
-  .search-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 7px 12px;
-    font-size: 12px;
-    color: var(--text);
-    font-family: var(--font-fr);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .search-input:focus { border-color: var(--accent); }
-  .search-input::placeholder { color: var(--muted); }
-
-  #searchResults {
-    position: absolute;
-    top: calc(100% - 4px);
-    left: 12px; right: 12px;
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    border-radius: 0 0 8px 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 300;
-    display: none;
-    box-shadow: var(--shadow);
-  }
-
-  #searchResults.open { display: block; }
-
-  .sr-item {
-    padding: 8px 12px;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--text);
-    transition: background 0.1s;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .sr-item:last-child { border-bottom: none; }
-  .sr-item:hover { background: var(--accent-light); }
-  .sr-ref { font-size: 10px; color: var(--accent); margin-top: 1px; }
-
-  .nav-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 6px 0 16px;
-  }
-
-  .nav-scroll::-webkit-scrollbar { width: 3px; }
-  .nav-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .section-label {
-    font-size: 9px;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 12px 14px 4px;
-    font-weight: 600;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 14px;
-    cursor: pointer;
-    color: var(--text);
-    transition: background 0.12s;
-    border-left: 3px solid transparent;
-  }
-
-  .nav-item:hover { background: var(--accent-light); }
-
-  .nav-item.active {
-    background: var(--accent-light);
-    border-left-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .nav-item .book-heb {
-    font-family: var(--font-heb);
-    font-size: 15px;
-    display: block;
-    line-height: 1.2;
-  }
-
-  .nav-item .book-fr {
-    font-size: 11px;
-    color: var(--muted);
-    display: block;
-    margin-top: 1px;
-  }
-
-  .nav-item.active .book-fr { color: var(--accent); opacity: 0.8; }
-  .nav-item .ch-count { font-size: 10px; color: var(--muted); white-space: nowrap; }
-
-  /* ── MAIN ── */
-  #main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg);
-  }
-
-  /* ── TOPBAR ── */
-  #topbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    flex-wrap: wrap;
-  }
-
-  .breadcrumb {
-    flex: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .bc-heb {
-    font-family: var(--font-heb);
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .bc-sep { color: var(--muted); font-size: 13px; }
-
-  .bc-fr { font-size: 13px; color: var(--muted); }
-
-  .bc-ch {
-    font-size: 13px;
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .api-badge {
-    font-size: 10px;
-    padding: 3px 9px;
-    border-radius: 12px;
-    background: var(--accent-light);
-    color: var(--accent);
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .topbar-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-family: var(--font-fr);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    color: var(--text);
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .topbar-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-  .topbar-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-  /* ── CHAPTER NAV ── */
-  #chapterNav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 20px;
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    background: var(--bg);
-    flex-shrink: 0;
-  }
-
-  #chapterNav::-webkit-scrollbar { height: 2px; }
-  #chapterNav::-webkit-scrollbar-thumb { background: var(--border); }
-
-  .ch-label { font-size: 11px; color: var(--muted); white-space: nowrap; margin-right: 4px; }
-
-  .ch-btn {
-    min-width: 28px;
-    height: 26px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    font-size: 11px;
-    cursor: pointer;
-    color: var(--text);
-    font-family: var(--font-fr);
-    transition: all 0.12s;
-    padding: 0 4px;
-  }
-
-  .ch-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-  .ch-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-  /* ── READER ── */
-  #reader {
-    flex: 1;
-    overflow-y: auto;
-    padding: 28px 36px;
-  }
-
-  #reader::-webkit-scrollbar { width: 5px; }
-  #reader::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  .loading-msg {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-    font-size: 15px;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 18px; height: 18px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-    margin-left: 8px;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .verse-block {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 6px 0;
-    transition: background 0.12s;
-    border-radius: 4px;
-  }
-
-  .verse-block:hover { background: var(--accent-light); }
-  .verse-block.heb-only, .verse-block.fr-only { grid-template-columns: 1fr; }
-
-  .col-heb {
-    direction: rtl;
-    text-align: right;
-    padding: 0 20px 0 12px;
-    border-right: 1px solid var(--border);
-  }
-
-  .verse-block.heb-only .col-heb,
-  .verse-block.fr-only .col-fr { border: none; }
-
-  .col-fr {
-    padding: 0 12px 0 20px;
-    direction: ltr;
-  }
-
-  .verse-num-heb {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 5px;
-    letter-spacing: 0.5px;
-    direction: rtl;
-  }
-
-  .verse-num-fr {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 5px;
-    letter-spacing: 0.5px;
-  }
-
-  .heb-text {
-    font-family: var(--font-heb);
-    font-size: var(--heb-size);
-    line-height: 2;
-    color: var(--text);
-  }
-
-  .heb-word {
-    cursor: default;
-    display: inline;
-    padding: 0 2px;
-  }
-
-  .fr-text {
-    font-family: var(--font-fr);
-    font-size: var(--fr-size);
-    line-height: 1.75;
-    color: var(--text);
-  }
-
-  .fr-na { opacity: 0.4; font-style: italic; font-size: 13px; }
-
-  .rashi-block {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--border);
-    direction: rtl;
-    text-align: right;
-  }
-
-  .rashi-label {
-    font-size: 10px;
-    color: var(--accent);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: 3px;
-  }
-
-  .rashi-text {
-    font-family: var(--font-heb);
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.7;
-    font-style: italic;
-  }
-
-  .verse-actions {
-    display: flex;
-    gap: 5px;
-    margin-top: 8px;
-    opacity: 0;
-    transition: opacity 0.15s;
-    direction: rtl;
-  }
-
-  .verse-block:hover .verse-actions { opacity: 1; }
-
-  .va-btn {
-    font-size: 10px;
-    padding: 3px 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--bg);
-    cursor: pointer;
-    color: var(--muted);
-    font-family: var(--font-fr);
-    transition: all 0.12s;
-  }
-
-  .va-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-
-
-  /* ── PANEL (Settings / Share) ── */
-  .panel {
-    position: fixed;
-    top: 0; right: 0;
-    width: 270px;
-    height: 100vh;
-    background: var(--surface);
-    border-left: 1px solid var(--border);
-    z-index: 500;
-    display: flex;
-    flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.25s ease;
-    box-shadow: -4px 0 24px rgba(0,0,0,0.1);
-  }
-
-  .panel.open { transform: translateX(0); }
-
-  .panel-header {
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-  }
-
-  .panel-title { font-size: 14px; font-weight: 500; color: var(--text); }
-
-  .close-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    width: 28px; height: 28px;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.12s;
-  }
-
-  .close-btn:hover { color: var(--text); border-color: var(--text); }
-
-  .panel-body { padding: 18px; overflow-y: auto; flex: 1; }
-  .panel-body::-webkit-scrollbar { width: 3px; }
-  .panel-body::-webkit-scrollbar-thumb { background: var(--border); }
-
-  .setting-section { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
-  .setting-section:first-child { margin-top: 0; }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .setting-label { font-size: 13px; color: var(--text); }
-
-  .toggle {
-    width: 38px; height: 22px;
-    background: var(--border);
-    border-radius: 11px;
-    cursor: pointer;
-    position: relative;
-    transition: background 0.2s;
-    border: none;
-    flex-shrink: 0;
-  }
-
-  .toggle.on { background: var(--accent); }
-
-  .toggle::after {
-    content: '';
-    position: absolute;
-    width: 16px; height: 16px;
-    background: white;
-    border-radius: 50%;
-    top: 3px; left: 3px;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-
-  .toggle.on::after { transform: translateX(16px); }
-
-  .size-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .size-label { font-size: 13px; color: var(--text); flex: 1; }
-
-  .size-btn {
-    width: 26px; height: 26px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    cursor: pointer;
-    color: var(--text);
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.12s;
-  }
-
-  .size-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .size-val { font-size: 13px; min-width: 28px; text-align: center; color: var(--accent); font-weight: 500; }
-
-  .font-option {
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    margin-bottom: 6px;
-    font-size: 14px;
-    color: var(--text);
-    transition: all 0.12s;
-    font-family: var(--font-heb);
-    direction: rtl;
-    text-align: right;
-  }
-
-  .font-option:hover { border-color: var(--accent); }
-  .font-option.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-  .theme-row { display: flex; gap: 6px; margin-bottom: 6px; }
-
-  .theme-swatch {
-    flex: 1;
-    height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    font-size: 11px;
-    font-family: var(--font-fr);
-    transition: border-color 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-  }
-
-  .theme-swatch.active { border-color: var(--accent) !important; }
-
-  /* ── SHARE PANEL ── */
-  .verse-preview {
-    border-radius: 12px;
-    padding: 22px 18px;
-    margin-bottom: 14px;
-    text-align: center;
-    background: linear-gradient(135deg, #1a2a4a, #2d4a8a);
-  }
-
-  .vp-heb { font-family: var(--font-heb); font-size: 18px; color: #e8f0f8; line-height: 1.8; direction: rtl; margin-bottom: 8px; }
-  .vp-fr { font-size: 12px; color: rgba(232,240,248,0.75); font-style: italic; margin-bottom: 8px; line-height: 1.5; }
-  .vp-ref { font-size: 10px; color: rgba(232,240,248,0.5); letter-spacing: 1.5px; text-transform: uppercase; }
-
-  .style-row { display: flex; gap: 6px; margin-bottom: 14px; }
-
-  .style-swatch {
-    flex: 1;
-    height: 28px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    font-size: 10px;
-    font-family: var(--font-fr);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255,255,255,0.9);
-    font-weight: 500;
-    transition: border-color 0.15s;
-  }
-
-  .style-swatch.active { border-color: white; }
-
-  .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-
-  .share-btn {
-    padding: 9px 8px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg);
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--text);
-    font-family: var(--font-fr);
-    transition: all 0.12s;
-    text-align: center;
-  }
-
-  .share-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
-
-  /* ── NOTIFICATION ── */
-  #notif {
-    position: fixed;
-    bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(60px);
-    background: var(--accent);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-family: var(--font-fr);
-    box-shadow: var(--shadow);
-    z-index: 2000;
-    transition: transform 0.3s ease;
-    pointer-events: none;
-  }
-
-  #notif.show { transform: translateX(-50%) translateY(0); }
-
-  /* ── OVERLAY ── */
-  #overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.3);
-    z-index: 400;
-    display: none;
-    backdrop-filter: blur(2px);
-  }
-
-  #overlay.show { display: block; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sidebar-w: 240px;
+  --font-heb: 'Frank Ruhl Libre', serif;
+  --font-fr: 'Assistant', sans-serif;
+  --heb-size: 22px;
+  --fr-size: 15px;
+  --accent: #2d6a4f;
+  --accent2: #1a4a34;
+  --accent-light: rgba(45,106,79,0.11);
+  --bg: #fafaf8;
+  --surface: #f3f3ef;
+  --text: #1c1c1a;
+  --muted: #6b6b65;
+  --border: rgba(0,0,0,0.09);
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --progress-bg: #e4e4e0;
+}
+
+body { font-family: var(--font-fr); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+body.theme-sepia { --bg:#f7efe0; --surface:#ede3ce; --text:#3a2e1e; --muted:#7a6545; --accent:#8B5E3C; --accent2:#6a4020; --accent-light:rgba(139,94,60,0.12); --border:rgba(139,94,60,0.15); --progress-bg:#d4c4a0; }
+body.theme-night { --bg:#141420; --surface:#1e1e30; --text:#e2e2ef; --muted:#9090b8; --accent:#7b9cda; --accent2:#5070b0; --accent-light:rgba(123,156,218,0.15); --border:rgba(255,255,255,0.08); --progress-bg:#2a2a40; }
+
+/* ── LAYOUT ── */
+#layout { display:flex; flex:1; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+#sidebar { width:var(--sidebar-w); min-width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+
+.sidebar-logo { padding:14px 16px 10px; border-bottom:1px solid var(--border); display:flex; align-items:baseline; gap:10px; }
+.logo-heb { font-family:var(--font-heb); font-size:22px; font-weight:700; color:var(--accent); }
+.logo-sub { display:flex; flex-direction:column; }
+.logo-name { font-size:15px; font-weight:300; color:var(--text); letter-spacing:1px; }
+.logo-tagline { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); margin-top:1px; }
+
+/* ── CYCLE BAR in sidebar ── */
+.cycle-bar { padding:10px 12px; border-bottom:1px solid var(--border); background:var(--accent-light); }
+.cycle-title { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+.cycle-title span { font-size:11px; letter-spacing:0; font-weight:400; color:var(--muted); text-transform:none; }
+.progress-track { height:6px; background:var(--progress-bg); border-radius:3px; overflow:hidden; margin-bottom:5px; }
+.progress-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.5s ease; }
+.cycle-stats { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+.cycle-stats strong { color:var(--accent); }
+
+.search-wrap { padding:8px 10px; border-bottom:1px solid var(--border); position:relative; }
+.search-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:12px; color:var(--text); font-family:var(--font-fr); outline:none; transition:border-color 0.15s; }
+.search-input:focus { border-color:var(--accent); }
+.search-input::placeholder { color:var(--muted); }
+#searchResults { position:absolute; top:calc(100% - 2px); left:10px; right:10px; background:var(--surface); border:1px solid var(--accent); border-radius:0 0 8px 8px; max-height:200px; overflow-y:auto; z-index:300; display:none; box-shadow:var(--shadow); }
+#searchResults.open { display:block; }
+.sr-item { padding:7px 12px; font-size:12px; cursor:pointer; color:var(--text); transition:background 0.1s; border-bottom:1px solid var(--border); }
+.sr-item:hover { background:var(--accent-light); }
+.sr-ref { font-size:10px; color:var(--accent); margin-top:1px; }
+
+.nav-scroll { flex:1; overflow-y:auto; padding:4px 0 16px; }
+.nav-scroll::-webkit-scrollbar { width:3px; }
+.nav-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.section-label { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); padding:10px 12px 3px; font-weight:600; }
+
+.nav-item { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; cursor:pointer; color:var(--text); transition:background 0.12s; border-left:3px solid transparent; }
+.nav-item:hover { background:var(--accent-light); }
+.nav-item.active { background:var(--accent-light); border-left-color:var(--accent); }
+.nav-item .book-heb { font-family:var(--font-heb); font-size:14px; display:block; line-height:1.2; }
+.nav-item .book-fr { font-size:10px; color:var(--muted); display:block; }
+.nav-item.active .book-fr { color:var(--accent); opacity:0.8; }
+
+.nav-item-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.ch-count { font-size:10px; color:var(--muted); white-space:nowrap; }
+
+/* mini progress per book */
+.book-progress-bar { width:36px; height:3px; background:var(--progress-bg); border-radius:2px; overflow:hidden; }
+.book-progress-fill { height:100%; background:var(--accent); border-radius:2px; }
+
+/* today badge */
+.today-badge { font-size:9px; background:var(--accent); color:white; border-radius:10px; padding:1px 5px; white-space:nowrap; }
+
+/* ── MAIN ── */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+/* ── TOPBAR ── */
+#topbar { display:flex; align-items:center; gap:8px; padding:8px 16px; border-bottom:1px solid var(--border); background:var(--surface); flex-wrap:wrap; }
+.breadcrumb { flex:1; display:flex; align-items:baseline; gap:6px; min-width:0; }
+.bc-heb { font-family:var(--font-heb); font-size:17px; font-weight:500; color:var(--text); }
+.bc-sep { color:var(--muted); font-size:12px; }
+.bc-fr { font-size:12px; color:var(--muted); }
+.bc-ch { font-size:12px; color:var(--accent); font-weight:500; }
+.api-badge { font-size:10px; padding:2px 8px; border-radius:12px; background:var(--accent-light); color:var(--accent); font-weight:500; white-space:nowrap; }
+.topbar-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; font-size:11px; font-family:var(--font-fr); background:transparent; border:1px solid var(--border); border-radius:7px; cursor:pointer; color:var(--text); transition:all 0.15s; white-space:nowrap; }
+.topbar-btn:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+.topbar-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+.topbar-btn.warning { background:#fff3e0; border-color:#f59e0b; color:#b45309; }
+.topbar-btn.warning:hover { background:#f59e0b; color:white; }
+
+/* ── CHAPTER NAV ── */
+#chapterNav { display:flex; align-items:center; gap:3px; padding:6px 16px; border-bottom:1px solid var(--border); overflow-x:auto; background:var(--bg); flex-shrink:0; }
+#chapterNav::-webkit-scrollbar { height:2px; }
+#chapterNav::-webkit-scrollbar-thumb { background:var(--border); }
+.ch-label { font-size:11px; color:var(--muted); white-space:nowrap; margin-right:4px; }
+.ch-btn { min-width:26px; height:24px; border:1px solid var(--border); border-radius:5px; background:transparent; font-size:11px; cursor:pointer; color:var(--text); font-family:var(--font-fr); transition:all 0.12s; padding:0 3px; position:relative; }
+.ch-btn:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+.ch-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+.ch-btn.done { background:var(--accent-light); color:var(--accent); }
+.ch-btn.done::after { content:'✓'; position:absolute; top:-5px; right:-4px; font-size:8px; background:var(--accent); color:white; border-radius:50%; width:10px; height:10px; display:flex; align-items:center; justify-content:center; line-height:10px; }
+.ch-btn.today-ch { border-color:var(--accent); border-width:2px; }
+
+/* ── READER ── */
+#reader { flex:1; overflow-y:auto; padding:20px 28px; }
+#reader::-webkit-scrollbar { width:5px; }
+#reader::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+.loading-msg { text-align:center; padding:60px 20px; color:var(--muted); font-size:15px; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-left:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* chapter header with done checkbox */
+.chapter-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+.chapter-title { font-family:var(--font-heb); font-size:18px; color:var(--accent); }
+.chapter-title-fr { font-size:13px; color:var(--muted); margin-left:8px; }
+.done-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; padding:6px 12px; border:1px solid var(--border); border-radius:8px; transition:all 0.15s; background:var(--bg); font-size:12px; font-family:var(--font-fr); color:var(--muted); }
+.done-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.done-toggle.done { background:var(--accent); border-color:var(--accent); color:white; }
+.done-toggle .check { font-size:14px; }
+
+.verse-block { display:grid; grid-template-columns:1fr 1fr; gap:0; border-bottom:1px solid var(--border); padding:6px 0; transition:background 0.12s; border-radius:4px; }
+.verse-block:hover { background:var(--accent-light); }
+.verse-block.heb-only, .verse-block.fr-only { grid-template-columns:1fr; }
+.col-heb { direction:rtl; text-align:right; padding:0 16px 0 10px; border-right:1px solid var(--border); }
+.verse-block.heb-only .col-heb, .verse-block.fr-only .col-fr { border:none; }
+.col-fr { padding:0 10px 0 16px; direction:ltr; }
+.verse-num-heb { font-size:10px; font-weight:600; color:var(--accent); margin-bottom:3px; direction:rtl; }
+.verse-num-fr { font-size:10px; font-weight:600; color:var(--accent); margin-bottom:3px; }
+.heb-text { font-family:var(--font-heb); font-size:var(--heb-size); line-height:2; color:var(--text); }
+.heb-word { display:inline; padding:0 2px; }
+.fr-text { font-family:var(--font-fr); font-size:var(--fr-size); line-height:1.75; color:var(--text); }
+.fr-na { opacity:0.4; font-style:italic; font-size:13px; }
+.rashi-block { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); direction:rtl; text-align:right; }
+.rashi-label { font-size:10px; color:var(--accent); font-weight:600; margin-bottom:2px; }
+.rashi-text { font-family:var(--font-heb); font-size:13px; color:var(--muted); line-height:1.7; font-style:italic; }
+.verse-actions { display:flex; gap:4px; margin-top:6px; opacity:0; transition:opacity 0.15s; direction:rtl; }
+.verse-block:hover .verse-actions { opacity:1; }
+.va-btn { font-size:10px; padding:2px 7px; border:1px solid var(--border); border-radius:4px; background:var(--bg); cursor:pointer; color:var(--muted); font-family:var(--font-fr); transition:all 0.12s; }
+.va-btn:hover { color:var(--accent); border-color:var(--accent); }
+
+/* ── PANEL ── */
+.panel { position:fixed; top:0; right:0; width:280px; height:100vh; background:var(--surface); border-left:1px solid var(--border); z-index:500; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.25s ease; box-shadow:-4px 0 24px rgba(0,0,0,0.1); }
+.panel.open { transform:translateX(0); }
+.panel-header { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--bg); }
+.panel-title { font-size:13px; font-weight:500; color:var(--text); }
+.close-btn { background:none; border:1px solid var(--border); border-radius:6px; width:26px; height:26px; cursor:pointer; color:var(--muted); font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.close-btn:hover { color:var(--text); border-color:var(--text); }
+.panel-body { padding:16px; overflow-y:auto; flex:1; }
+.panel-body::-webkit-scrollbar { width:3px; }
+.panel-body::-webkit-scrollbar-thumb { background:var(--border); }
+.setting-section { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin:16px 0 8px; font-weight:600; }
+.setting-section:first-child { margin-top:0; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+.setting-label { font-size:13px; color:var(--text); }
+.toggle { width:36px; height:20px; background:var(--border); border-radius:10px; cursor:pointer; position:relative; transition:background 0.2s; border:none; flex-shrink:0; }
+.toggle.on { background:var(--accent); }
+.toggle::after { content:''; position:absolute; width:14px; height:14px; background:white; border-radius:50%; top:3px; left:3px; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.toggle.on::after { transform:translateX(16px); }
+.size-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); }
+.size-label { font-size:13px; color:var(--text); flex:1; }
+.size-btn { width:24px; height:24px; border:1px solid var(--border); border-radius:5px; background:var(--bg); cursor:pointer; color:var(--text); font-size:15px; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.size-btn:hover { border-color:var(--accent); color:var(--accent); }
+.size-val { font-size:13px; min-width:26px; text-align:center; color:var(--accent); font-weight:500; }
+.font-option { padding:8px 10px; border:1px solid var(--border); border-radius:7px; cursor:pointer; margin-bottom:5px; font-size:14px; color:var(--text); transition:all 0.12s; font-family:var(--font-heb); direction:rtl; text-align:right; }
+.font-option:hover { border-color:var(--accent); }
+.font-option.active { background:var(--accent); color:white; border-color:var(--accent); }
+.theme-row { display:flex; gap:5px; margin-bottom:5px; }
+.theme-swatch { flex:1; height:34px; border-radius:7px; cursor:pointer; border:2px solid transparent; font-size:11px; font-family:var(--font-fr); transition:border-color 0.15s; display:flex; align-items:center; justify-content:center; font-weight:500; }
+.theme-swatch.active { border-color:var(--accent) !important; }
+
+/* ── YOMI PANEL ── */
+.yomi-card { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px; }
+.yomi-card-title { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-weight:600; }
+.yomi-today { font-family:var(--font-heb); font-size:16px; color:var(--accent); margin-bottom:4px; }
+.yomi-today-fr { font-size:12px; color:var(--text); }
+.yomi-date { font-size:11px; color:var(--muted); margin-top:4px; }
+
+.progress-block { margin-bottom:10px; }
+.progress-label { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px; }
+.progress-label strong { color:var(--text); }
+.progress-track-lg { height:8px; background:var(--progress-bg); border-radius:4px; overflow:hidden; }
+.progress-fill-lg { height:100%; background:var(--accent); border-radius:4px; transition:width 0.5s ease; }
+.progress-fill-lg.secondary { background:color-mix(in srgb, var(--accent) 50%, var(--progress-bg)); }
+
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.stat-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+.stat-val { font-size:20px; font-weight:600; color:var(--accent); line-height:1.2; }
+.stat-label { font-size:10px; color:var(--muted); margin-top:2px; }
+
+.catchup-box { background:linear-gradient(135deg,#fff8e1,#fff3e0); border:1px solid #f59e0b; border-radius:10px; padding:14px; margin-bottom:12px; }
+body.theme-night .catchup-box { background:linear-gradient(135deg,#2a2010,#2a1a00); border-color:#c07000; }
+.catchup-title { font-size:12px; font-weight:600; color:#b45309; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+body.theme-night .catchup-title { color:#f59e0b; }
+.catchup-desc { font-size:11px; color:#92400e; margin-bottom:8px; line-height:1.5; }
+body.theme-night .catchup-desc { color:#fbbf24; }
+.catchup-btn { width:100%; padding:8px; background:#f59e0b; border:none; border-radius:7px; color:white; font-size:12px; font-family:var(--font-fr); cursor:pointer; font-weight:600; transition:background 0.15s; }
+.catchup-btn:hover { background:#d97706; }
+
+.siyoum-box { background:linear-gradient(135deg, var(--accent-light), transparent); border:1px solid var(--accent); border-radius:10px; padding:14px; margin-bottom:12px; text-align:center; }
+.siyoum-date { font-size:18px; font-weight:600; color:var(--accent); margin-bottom:2px; }
+.siyoum-label { font-size:11px; color:var(--muted); }
+
+.cycle-btn-row { display:flex; gap:6px; margin-top:12px; }
+.cycle-btn { flex:1; padding:8px 6px; border:1px solid var(--border); border-radius:7px; background:var(--bg); font-size:11px; font-family:var(--font-fr); cursor:pointer; color:var(--text); transition:all 0.15s; text-align:center; }
+.cycle-btn:hover { border-color:var(--accent); color:var(--accent); }
+.cycle-btn.primary { background:var(--accent); color:white; border-color:var(--accent); }
+.cycle-btn.primary:hover { background:var(--accent2); }
+
+/* share panel */
+.verse-preview { border-radius:10px; padding:20px 16px; margin-bottom:12px; text-align:center; background:linear-gradient(135deg,#1a2a4a,#2d4a8a); }
+.vp-heb { font-family:var(--font-heb); font-size:17px; color:#e8f0f8; line-height:1.8; direction:rtl; margin-bottom:6px; }
+.vp-fr { font-size:11px; color:rgba(232,240,248,0.75); font-style:italic; margin-bottom:6px; line-height:1.4; }
+.vp-ref { font-size:10px; color:rgba(232,240,248,0.5); letter-spacing:1.5px; text-transform:uppercase; }
+.style-row { display:flex; gap:5px; margin-bottom:12px; }
+.style-swatch { flex:1; height:26px; border-radius:5px; cursor:pointer; border:2px solid transparent; font-size:10px; font-family:var(--font-fr); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.9); font-weight:500; transition:border-color 0.15s; }
+.style-swatch.active { border-color:white; }
+.share-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.share-btn { padding:8px 6px; border:1px solid var(--border); border-radius:7px; background:var(--bg); font-size:11px; cursor:pointer; color:var(--text); font-family:var(--font-fr); transition:all 0.12s; text-align:center; }
+.share-btn:hover { background:var(--accent); color:white; border-color:var(--accent); }
+
+/* ── OVERLAY ── */
+#overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:400; display:none; backdrop-filter:blur(2px); }
+#overlay.show { display:block; }
+
+/* ── NOTIFICATION ── */
+#notif { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:var(--accent); color:white; padding:9px 18px; border-radius:20px; font-size:13px; font-family:var(--font-fr); box-shadow:var(--shadow); z-index:2000; transition:transform 0.3s ease; pointer-events:none; }
+#notif.show { transform:translateX(-50%) translateY(0); }
+
+/* ── MODAL (cycle start) ── */
+#modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:600; display:none; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+#modal.show { display:flex; }
+.modal-box { background:var(--surface); border-radius:14px; padding:28px; width:340px; box-shadow:0 8px 40px rgba(0,0,0,0.25); }
+.modal-title { font-size:16px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.modal-desc { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:20px; }
+.modal-field { margin-bottom:14px; }
+.modal-label { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-weight:600; }
+.modal-input { width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); font-size:13px; font-family:var(--font-fr); outline:none; }
+.modal-input:focus { border-color:var(--accent); }
+.modal-row { display:flex; gap:8px; }
+.modal-btn { flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); font-size:13px; font-family:var(--font-fr); cursor:pointer; color:var(--text); transition:all 0.15s; }
+.modal-btn.primary { background:var(--accent); color:white; border-color:var(--accent); }
+.modal-btn:hover { opacity:0.85; }
+
+/* ── SIYOUM CELEBRATION ── */
+#siyoum-modal { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:700; display:none; align-items:center; justify-content:center; }
+#siyoum-modal.show { display:flex; }
+.siyoum-card { background:var(--surface); border-radius:16px; padding:36px; width:360px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.3); }
+.siyoum-emoji { font-size:48px; margin-bottom:16px; }
+.siyoum-headline { font-family:var(--font-heb); font-size:26px; color:var(--accent); margin-bottom:8px; }
+.siyoum-sub { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
 </style>
 </head>
 <body class="theme-light">
@@ -708,8 +279,20 @@
       </div>
     </div>
 
+    <!-- CYCLE PROGRESS BAR -->
+    <div class="cycle-bar" id="cycleBar">
+      <div class="cycle-title">Nach Yomi <span id="cycleType">—</span></div>
+      <div class="progress-track">
+        <div class="progress-fill" id="globalFill" style="width:0%"></div>
+      </div>
+      <div class="cycle-stats">
+        <span><strong id="doneCount">0</strong> / <span id="totalCount">0</span> ch.</span>
+        <span>Siyoum : <strong id="siyoumEst">—</strong></span>
+      </div>
+    </div>
+
     <div class="search-wrap">
-      <input class="search-input" id="searchInput" placeholder="🔍  Livre, mot-clé, verset..." autocomplete="off">
+      <input class="search-input" id="searchInput" placeholder="🔍  Livre, verset…" autocomplete="off">
       <div id="searchResults"></div>
     </div>
 
@@ -718,8 +301,6 @@
 
   <!-- MAIN -->
   <div id="main">
-
-    <!-- TOPBAR -->
     <div id="topbar">
       <div class="breadcrumb">
         <span class="bc-heb" id="bcHeb">יְהוֹשֻׁעַ</span>
@@ -729,23 +310,79 @@
         <span class="bc-ch">Chapitre <span id="bcCh">1</span></span>
       </div>
       <span class="api-badge" id="apiBadge">● Sefaria</span>
+      <button class="topbar-btn warning" id="btnCatchup" onclick="togglePanel('yomi')" style="display:none">⚡ Rattrapage</button>
+      <button class="topbar-btn" id="btnYomi" onclick="togglePanel('yomi')">📅 Nach Yomi</button>
       <button class="topbar-btn" id="btnSettings" onclick="togglePanel('settings')">⚙ Paramètres</button>
       <button class="topbar-btn" id="btnShare" onclick="togglePanel('share')">↑ Partager</button>
     </div>
 
-    <!-- CHAPTER NAV -->
     <div id="chapterNav"></div>
 
-    <!-- READER -->
     <div id="reader">
       <div class="loading-msg">Chargement du texte… <span class="spinner"></span></div>
     </div>
-
   </div>
 </div>
 
 <!-- OVERLAY -->
 <div id="overlay" onclick="closeAllPanels()"></div>
+
+<!-- NACH YOMI PANEL -->
+<div class="panel" id="panelYomi">
+  <div class="panel-header">
+    <span class="panel-title">📅 Nach Yomi</span>
+    <button class="close-btn" onclick="togglePanel('yomi')">×</button>
+  </div>
+  <div class="panel-body">
+
+    <div class="yomi-card" id="todayCard">
+      <div class="yomi-card-title">Aujourd'hui</div>
+      <div class="yomi-today" id="todayHeb">—</div>
+      <div class="yomi-today-fr" id="todayFr">—</div>
+      <div class="yomi-date" id="todayDate">—</div>
+    </div>
+
+    <div class="setting-section">Progression globale du Nach</div>
+
+    <div class="progress-block">
+      <div class="progress-label"><strong id="progBookName">—</strong><span id="progBookPct">0%</span></div>
+      <div class="progress-track-lg"><div class="progress-fill-lg secondary" id="progBookFill" style="width:0%"></div></div>
+    </div>
+    <div class="progress-block">
+      <div class="progress-label"><strong>Nach complet</strong><span id="progNachPct">0%</span></div>
+      <div class="progress-track-lg"><div class="progress-fill-lg" id="progNachFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="statDone">0</div><div class="stat-label">Chapitres étudiés</div></div>
+      <div class="stat-card"><div class="stat-val" id="statLeft">0</div><div class="stat-label">Restants</div></div>
+      <div class="stat-card"><div class="stat-val" id="statStreak">0</div><div class="stat-label">Jours consécutifs</div></div>
+      <div class="stat-card"><div class="stat-val" id="statRetard">0</div><div class="stat-label">Jours de retard</div></div>
+    </div>
+
+    <div id="catchupBox" style="display:none">
+      <div class="catchup-box">
+        <div class="catchup-title">⚡ Mode Rattrapage</div>
+        <div class="catchup-desc" id="catchupDesc">—</div>
+        <button class="catchup-btn" onclick="activateCatchup()">Activer le rattrapage sur 7 jours</button>
+      </div>
+    </div>
+
+    <div class="siyoum-box">
+      <div class="siyoum-label">Siyoum estimé</div>
+      <div class="siyoum-date" id="siyoumDate">—</div>
+      <div class="siyoum-label" id="siyoumDays">—</div>
+    </div>
+
+    <div class="setting-section">Cycle</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="cycleInfo">—</div>
+    <div class="cycle-btn-row">
+      <button class="cycle-btn" onclick="openCycleModal('personal')">Cycle personnel</button>
+      <button class="cycle-btn primary" onclick="openCycleModal('community')">Cycle communautaire</button>
+    </div>
+    <button class="cycle-btn" style="width:100%;margin-top:6px;color:#dc2626;border-color:#dc2626" onclick="resetProgress()">Réinitialiser la progression</button>
+  </div>
+</div>
 
 <!-- SETTINGS PANEL -->
 <div class="panel" id="panelSettings">
@@ -767,7 +404,6 @@
       <span class="setting-label">Commentaire Rachi</span>
       <button class="toggle" id="togRashi" onclick="toggleCol('Rashi',this)"></button>
     </div>
-
     <div class="setting-section">Taille de police</div>
     <div class="size-row">
       <span class="size-label">Hébreu</span>
@@ -781,15 +417,13 @@
       <span class="size-val" id="sizeFrVal">15</span>px
       <button class="size-btn" onclick="changeSize('fr',1)">+</button>
     </div>
-
     <div class="setting-section">Police hébraïque</div>
     <div class="font-option active" data-font="'Frank Ruhl Libre', serif" onclick="setFont(this)">פרנק רוהל ליברה — Frank Ruhl Libre</div>
-    <div class="font-option" data-font="'Tinos', serif" style="font-family:'Tinos',serif" onclick="setFont(this)">טינוס — Tinos</div>
     <div class="font-option" data-font="Georgia, serif" style="font-family:Georgia,serif" onclick="setFont(this)">ג'ורג'יה — Georgia</div>
-
+    <div class="font-option" data-font="serif" style="font-family:serif" onclick="setFont(this)">Serif classique</div>
     <div class="setting-section">Thème de lecture</div>
     <div class="theme-row">
-      <div class="theme-swatch active" style="background:#f4f4f0;color:#1c1c1a;border:2px solid var(--border)" onclick="setTheme('light',this)">☀ Clair</div>
+      <div class="theme-swatch active" style="background:#f3f3ef;color:#1c1c1a;border:2px solid #ccc" onclick="setTheme('light',this)">☀ Clair</div>
       <div class="theme-swatch" style="background:#ede3ce;color:#3a2e1e" onclick="setTheme('sepia',this)">🌅 Sépia</div>
       <div class="theme-swatch" style="background:#1e1e30;color:#e2e2ef" onclick="setTheme('night',this)">🌙 Nuit</div>
     </div>
@@ -809,160 +443,434 @@
       <div class="vp-fr" id="vpFr">L'Éternel fut avec Josué</div>
       <div class="vp-ref" id="vpRef">Josué · 6:27</div>
     </div>
-
-    <div class="setting-section">Style visuel</div>
+    <div class="setting-section">Style</div>
     <div class="style-row">
-      <div class="style-swatch active" style="background:linear-gradient(135deg,#1a3a2a,#2d6a4f)" onclick="setShareStyle('linear-gradient(135deg,#1a3a2a,#2d6a4f)',this)">Forêt</div>
-      <div class="style-swatch" style="background:linear-gradient(135deg,#1a2a4a,#2d4a8a)" onclick="setShareStyle('linear-gradient(135deg,#1a2a4a,#2d4a8a)',this)">Océan</div>
+      <div class="style-swatch" style="background:linear-gradient(135deg,#1a3a2a,#2d6a4f)" onclick="setShareStyle('linear-gradient(135deg,#1a3a2a,#2d6a4f)',this)">Forêt</div>
+      <div class="style-swatch active" style="background:linear-gradient(135deg,#1a2a4a,#2d4a8a)" onclick="setShareStyle('linear-gradient(135deg,#1a2a4a,#2d4a8a)',this)">Océan</div>
       <div class="style-swatch" style="background:linear-gradient(135deg,#3a1a1a,#8a2020)" onclick="setShareStyle('linear-gradient(135deg,#3a1a1a,#8a2020)',this)">Rubis</div>
       <div class="style-swatch" style="background:linear-gradient(135deg,#2a1a3a,#5a2a8a)" onclick="setShareStyle('linear-gradient(135deg,#2a1a3a,#5a2a8a)',this)">Améthyste</div>
     </div>
-
     <div class="setting-section">Exporter</div>
     <div class="share-grid">
       <button class="share-btn" onclick="shareWhatsApp()">📱 WhatsApp</button>
       <button class="share-btn" onclick="copyVerseText()">⎘ Copier texte</button>
       <button class="share-btn" onclick="showNotif('Lien copié !')">🔗 Copier lien</button>
-      <button class="share-btn" onclick="showNotif('Téléchargement en cours…')">⬇ Image PNG</button>
+      <button class="share-btn" onclick="showNotif('Téléchargement…')">⬇ Image PNG</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL CYCLE -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">Démarrer un cycle</div>
+    <div class="modal-desc" id="modalDesc">—</div>
+    <div class="modal-field" id="modalDateField" style="display:none">
+      <div class="modal-label">Date de début</div>
+      <input type="date" class="modal-input" id="modalDateInput">
+    </div>
+    <div class="modal-row">
+      <button class="modal-btn" onclick="closeModal()">Annuler</button>
+      <button class="modal-btn primary" onclick="confirmCycle()">Démarrer</button>
+    </div>
+  </div>
+</div>
 
-<!-- NOTIFICATION -->
+<!-- SIYOUM MODAL -->
+<div id="siyoum-modal">
+  <div class="siyoum-card">
+    <div class="siyoum-emoji">🎉</div>
+    <div class="siyoum-headline">סיום הנ"ך !</div>
+    <div class="siyoum-sub">Mazal Tov ! Vous avez terminé l'étude du Nach.<br>Félicitations pour cet accomplissement extraordinaire.</div>
+    <button class="cycle-btn primary" style="width:100%" onclick="document.getElementById('siyoum-modal').classList.remove('show');openCycleModal('community')">Commencer un nouveau cycle</button>
+  </div>
+</div>
+
 <div id="notif"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// BOOKS DATA — Nach complet (Nevi'im + Ketouvim)
+// Total : 907 chapitres
+// ═══════════════════════════════════════════════════════
 const BOOKS = [
-  { id:'Joshua',    heb:'יְהוֹשֻׁעַ',    fr:'Josué',     section:"Nevi'im Rishonim", chapters:24 },
-  { id:'Judges',    heb:'שׁוֹפְטִים',    fr:'Juges',     section:"Nevi'im Rishonim", chapters:21 },
-  { id:'I-Samuel',  heb:'שְׁמוּאֵל א',  fr:'Samuel I',  section:"Nevi'im Rishonim", chapters:31 },
-  { id:'II-Samuel', heb:'שְׁמוּאֵל ב',  fr:'Samuel II', section:"Nevi'im Rishonim", chapters:24 },
-  { id:'I-Kings',   heb:'מְלָכִים א',   fr:'Rois I',    section:"Nevi'im Rishonim", chapters:22 },
-  { id:'II-Kings',  heb:'מְלָכִים ב',   fr:'Rois II',   section:"Nevi'im Rishonim", chapters:25 },
-  { id:'Isaiah',    heb:'יְשַׁעְיָהוּ', fr:'Isaïe',     section:"Nevi'im Aharonim", chapters:66 },
-  { id:'Jeremiah',  heb:'יִרְמְיָהוּ',  fr:'Jérémie',   section:"Nevi'im Aharonim", chapters:52 },
-  { id:'Ezekiel',   heb:'יְחֶזְקֵאל',  fr:'Ézéchiel',  section:"Nevi'im Aharonim", chapters:48 },
-  { id:'Hosea',     heb:'הוֹשֵׁעַ',     fr:'Osée',      section:"Nevi'im Aharonim", chapters:14 },
-  { id:'Amos',      heb:'עָמוֹס',       fr:'Amos',      section:"Nevi'im Aharonim", chapters:9  },
-  { id:'Psalms',    heb:'תְּהִלִּים',   fr:'Psaumes',   section:'Ketouvim',          chapters:150 },
-  { id:'Proverbs',  heb:'מִשְׁלֵי',     fr:'Proverbes', section:'Ketouvim',          chapters:31  },
-  { id:'Job',       heb:'אִיּוֹב',      fr:'Job',       section:'Ketouvim',          chapters:42  },
-  { id:'Ruth',      heb:'רוּת',         fr:'Ruth',      section:'Ketouvim',          chapters:4   },
-  { id:'Esther',    heb:'אֶסְתֵּר',     fr:'Esther',    section:'Ketouvim',          chapters:10  },
-  { id:'Daniel',    heb:'דָּנִיֵּאל',   fr:'Daniel',    section:'Ketouvim',          chapters:12  },
-  { id:'Ezra',      heb:'עֶזְרָא',      fr:'Esdras',    section:'Ketouvim',          chapters:10  },
+  { id:'Joshua',      heb:'יְהוֹשֻׁעַ',    fr:'Josué',            section:"Nevi'im Rishonim", chapters:24 },
+  { id:'Judges',      heb:'שׁוֹפְטִים',    fr:'Juges',            section:"Nevi'im Rishonim", chapters:21 },
+  { id:'I-Samuel',    heb:'שְׁמוּאֵל א',  fr:'Samuel I',         section:"Nevi'im Rishonim", chapters:31 },
+  { id:'II-Samuel',   heb:'שְׁמוּאֵל ב',  fr:'Samuel II',        section:"Nevi'im Rishonim", chapters:24 },
+  { id:'I-Kings',     heb:'מְלָכִים א',   fr:'Rois I',           section:"Nevi'im Rishonim", chapters:22 },
+  { id:'II-Kings',    heb:'מְלָכִים ב',   fr:'Rois II',          section:"Nevi'im Rishonim", chapters:25 },
+  { id:'Isaiah',      heb:'יְשַׁעְיָהוּ', fr:'Isaïe',            section:"Nevi'im Aharonim", chapters:66 },
+  { id:'Jeremiah',    heb:'יִרְמְיָהוּ',  fr:'Jérémie',          section:"Nevi'im Aharonim", chapters:52 },
+  { id:'Ezekiel',     heb:'יְחֶזְקֵאל',  fr:'Ézéchiel',         section:"Nevi'im Aharonim", chapters:48 },
+  { id:'Hosea',       heb:'הוֹשֵׁעַ',     fr:'Osée',             section:"Nevi'im Aharonim", chapters:14 },
+  { id:'Joel',        heb:'יוֹאֵל',       fr:'Joël',             section:"Nevi'im Aharonim", chapters:4  },
+  { id:'Amos',        heb:'עָמוֹס',       fr:'Amos',             section:"Nevi'im Aharonim", chapters:9  },
+  { id:'Obadiah',     heb:'עֹבַדְיָה',    fr:'Abdias',           section:"Nevi'im Aharonim", chapters:1  },
+  { id:'Jonah',       heb:'יוֹנָה',       fr:'Jonas',            section:"Nevi'im Aharonim", chapters:4  },
+  { id:'Micah',       heb:'מִיכָה',       fr:'Michée',           section:"Nevi'im Aharonim", chapters:7  },
+  { id:'Nahum',       heb:'נַחוּם',       fr:'Nahum',            section:"Nevi'im Aharonim", chapters:3  },
+  { id:'Habakkuk',    heb:'חֲבַקּוּק',    fr:'Habacuc',          section:"Nevi'im Aharonim", chapters:3  },
+  { id:'Zephaniah',   heb:'צְפַנְיָה',    fr:'Sophonie',         section:"Nevi'im Aharonim", chapters:3  },
+  { id:'Haggai',      heb:'חַגַּי',       fr:'Aggée',            section:"Nevi'im Aharonim", chapters:2  },
+  { id:'Zechariah',   heb:'זְכַרְיָה',    fr:'Zacharie',         section:"Nevi'im Aharonim", chapters:14 },
+  { id:'Malachi',     heb:'מַלְאָכִי',    fr:'Malachie',         section:"Nevi'im Aharonim", chapters:3  },
+  { id:'Psalms',      heb:'תְּהִלִּים',   fr:'Psaumes',          section:'Ketouvim',          chapters:150},
+  { id:'Proverbs',    heb:'מִשְׁלֵי',     fr:'Proverbes',        section:'Ketouvim',          chapters:31 },
+  { id:'Job',         heb:'אִיּוֹב',      fr:'Job',              section:'Ketouvim',          chapters:42 },
+  { id:'Song',        heb:'שִׁיר הַשִּׁירִים', fr:'Cantique',   section:'Ketouvim',          chapters:8  },
+  { id:'Ruth',        heb:'רוּת',         fr:'Ruth',             section:'Ketouvim',          chapters:4  },
+  { id:'Lamentations',heb:'אֵיכָה',       fr:'Lamentations',     section:'Ketouvim',          chapters:5  },
+  { id:'Ecclesiastes',heb:'קֹהֶלֶת',      fr:'Ecclésiaste',      section:'Ketouvim',          chapters:12 },
+  { id:'Esther',      heb:'אֶסְתֵּר',     fr:'Esther',           section:'Ketouvim',          chapters:10 },
+  { id:'Daniel',      heb:'דָּנִיֵּאל',   fr:'Daniel',           section:'Ketouvim',          chapters:12 },
+  { id:'Ezra',        heb:'עֶזְרָא',      fr:'Esdras',           section:'Ketouvim',          chapters:10 },
+  { id:'Nehemiah',    heb:'נְחֶמְיָה',    fr:'Néhémie',          section:'Ketouvim',          chapters:13 },
+  { id:'I-Chronicles',heb:'דִּבְרֵי הַיָּמִים א', fr:'Chroniques I', section:'Ketouvim',   chapters:29 },
+  { id:'II-Chronicles',heb:'דִּבְרֵי הַיָּמִים ב', fr:'Chroniques II', section:'Ketouvim', chapters:36 },
 ];
+
+const TOTAL_CHAPTERS = BOOKS.reduce((s,b)=>s+b.chapters, 0); // 907
 
 const DEMO_TEXTS = {
   'Joshua.1': {
-    he: [
-      'וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל-יְהוֹשֻׁעַ בִּן-נוּן מְשָׁרֵת מֹשֶׁה לֵאמֹר׃',
-      'מֹשֶׁה עַבְדִּי מֵת וְעַתָּה קוּם עֲבֹר אֶת-הַיַּרְדֵּן הַזֶּה אַתָּה וְכָל-הָעָם הַזֶּה אֶל-הָאָרֶץ אֲשֶׁר אָנֹכִי נֹתֵן לָהֶם לִבְנֵי יִשְׂרָאֵל׃',
-      'כָּל-מָקוֹם אֲשֶׁר תִּדְרֹךְ כַּף-רַגְלְכֶם בּוֹ לָכֶם נְתַתִּיו כַּאֲשֶׁר דִּבַּרְתִּי אֶל-מֹשֶׁה׃',
-      'חֲזַק וֶאֱמָץ כִּי אַתָּה תַּנְחִיל אֶת-הָעָם הַזֶּה אֶת-הָאָרֶץ אֲשֶׁר נִשְׁבַּעְתִּי לַאֲבוֹתָם לָתֵת לָהֶם׃',
-      'רַק חֲזַק וֶאֱמַץ מְאֹד לִשְׁמֹר לַעֲשׂוֹת כְּכָל-הַתּוֹרָה אֲשֶׁר צִוְּךָ מֹשֶׁה עַבְדִּי אַל-תָּסוּר מִמֶּנּוּ יָמִין וּשְׂמֹאוֹל לְמַעַן תַּשְׂכִּיל בְּכֹל אֲשֶׁר תֵּלֵךְ׃',
-      'לֹא-יָמוּשׁ סֵפֶר הַתּוֹרָה הַזֶּה מִפִּיךָ וְהָגִיתָ בוֹ יוֹמָם וָלַיְלָה לְמַעַן תִּשְׁמֹר לַעֲשׂוֹת כְּכָל-הַכָּתוּב בוֹ כִּי-אָז תַּצְלִיחַ אֶת-דְּרָכֶךָ וְאָז תַּשְׂכִּיל׃',
-      'הֲלוֹא צִוִּיתִיךָ חֲזַק וֶאֱמָץ אַל-תַּעֲרֹץ וְאַל-תֵּחָת כִּי עִמְּךָ יְהוָה אֱלֹהֶיךָ בְּכֹל אֲשֶׁר תֵּלֵךְ׃',
-    ],
-    fr: [
-      'Après la mort de Moïse, serviteur de l\'Éternel, l\'Éternel dit à Josué, fils de Noun, serviteur de Moïse :',
-      'Moïse, mon serviteur, est mort. Maintenant, lève-toi, passe ce Jourdain, toi et tout ce peuple, vers le pays que je donne aux enfants d\'Israël.',
-      'Tout lieu que foulera la plante de vos pieds, je vous le donne, comme je l\'ai dit à Moïse.',
-      'Sois fort et courageux, car c\'est toi qui mettras ce peuple en possession du pays que j\'ai juré à leurs pères de leur donner.',
-      'Seulement, sois fort et très courageux, pour agir fidèlement selon toute la loi que Moïse, mon serviteur, t\'a prescrite. Ne t\'en détourne ni à droite ni à gauche, afin de réussir dans toutes tes entreprises.',
-      'Que ce livre de la loi ne s\'éloigne point de ta bouche ; médite-le jour et nuit, pour agir fidèlement selon tout ce qui y est écrit ; car c\'est alors que tu auras du succès dans tes entreprises, c\'est alors que tu réussiras.',
-      'Je te l\'ai commandé : sois fort et courageux. Ne t\'effraie point et ne t\'épouvante point, car l\'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprends.',
-    ],
-    rashi: [
-      'רש"י: אחרי מות משה — כל זמן שהיה משה קיים לא היה יהושע ראוי להנהיג, שנאמר ויהושע בן נון נער.',
-      'רש"י: קום עבר — ציווי לפעולה מיידית, שלא ישהה אלא יקום וילך.',
-      'רש"י: כל מקום — אפילו ברגל אחת, רמז שיכבוש את כולה.',
-      'רש"י: חזק ואמץ — חיזוק כפול, לאומץ הגוף ולאומץ הנפש.',
-      'רש"י: לא תסור ימין ושמאל — שלא לדרוש מה שאינו כתוב.',
-      'רש"י: ספר התורה — ספר התורה שמסר לו משה, ללמוד ולהגות בו יומם ולילה.',
-      'רש"י: כי עמך ה\' אלהיך — לכן אל תירא, שהוא עמך בכל מקום.',
-    ]
+    he: ['וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל-יְהוֹשֻׁעַ בִּן-נוּן מְשָׁרֵת מֹשֶׁה לֵאמֹר׃','מֹשֶׁה עַבְדִּי מֵת וְעַתָּה קוּם עֲבֹר אֶת-הַיַּרְדֵּן הַזֶּה אַתָּה וְכָל-הָעָם הַזֶּה׃','כָּל-מָקוֹם אֲשֶׁר תִּדְרֹךְ כַּף-רַגְלְכֶם בּוֹ לָכֶם נְתַתִּיו׃','חֲזַק וֶאֱמָץ כִּי אַתָּה תַּנְחִיל אֶת-הָעָם הַזֶּה׃','רַק חֲזַק וֶאֱמַץ מְאֹד לִשְׁמֹר לַעֲשׂוֹת כְּכָל-הַתּוֹרָה אֲשֶׁר צִוְּךָ מֹשֶׁה׃','לֹא-יָמוּשׁ סֵפֶר הַתּוֹרָה הַזֶּה מִפִּיךָ וְהָגִיתָ בוֹ יוֹמָם וָלָיְלָה׃','הֲלוֹא צִוִּיתִיךָ חֲזַק וֶאֱמָץ אַל-תַּעֲרֹץ כִּי עִמְּךָ יְהוָה אֱלֹהֶיךָ׃'],
+    fr: ['Après la mort de Moïse, serviteur de l\'Éternel, l\'Éternel dit à Josué, fils de Noun :','Moïse, mon serviteur, est mort. Lève-toi, passe ce Jourdain vers le pays que je donne aux enfants d\'Israël.','Tout lieu que foulera la plante de vos pieds, je vous le donne.','Sois fort et courageux, car c\'est toi qui mettras ce peuple en possession du pays.','Seulement, sois fort et très courageux pour agir selon toute la loi que Moïse t\'a prescrite.','Que ce livre de la loi ne s\'éloigne point de ta bouche ; médite-le jour et nuit.','Je te l\'ai commandé : sois fort et courageux. Ne t\'effraie point, car l\'Éternel ton Dieu est avec toi.'],
+    rashi: ['רש"י: אחרי מות משה — כל זמן שהיה משה קיים לא היה יהושע ראוי להנהיג.','רש"י: קום עבר — ציווי לפעולה מיידית.','רש"י: כל מקום — אפילו ברגל אחת.','רש"י: חזק ואמץ — חיזוק כפול לגוף ולנפש.','רש"י: לא תסור ימין ושמאל — שלא לדרוש מה שאינו כתוב.','רש"י: ספר התורה — ללמוד ולהגות בו יומם ולילה.','רש"י: כי עמך ה׳ אלהיך — לכן אל תירא.']
   },
   'Psalms.1': {
-    he: [
-      'אַשְׁרֵי הָאִישׁ אֲשֶׁר לֹא הָלַךְ בַּעֲצַת רְשָׁעִים וּבְדֶרֶךְ חַטָּאִים לֹא עָמָד וּבְמוֹשַׁב לֵצִים לֹא יָשָׁב׃',
-      'כִּי אִם בְּתוֹרַת יְהוָה חֶפְצוֹ וּבְתוֹרָתוֹ יֶהְגֶּה יוֹמָם וָלָיְלָה׃',
-      'וְהָיָה כְּעֵץ שָׁתוּל עַל-פַּלְגֵי מָיִם אֲשֶׁר פִּרְיוֹ יִתֵּן בְּעִתּוֹ וְעָלֵהוּ לֹא-יִבּוֹל וְכֹל אֲשֶׁר-יַעֲשֶׂה יַצְלִיחַ׃',
-      'לֹא-כֵן הָרְשָׁעִים כִּי אִם-כַּמֹּץ אֲשֶׁר-תִּדְּפֶנּוּ רוּחַ׃',
-      'עַל-כֵּן לֹא-יָקֻמוּ רְשָׁעִים בַּמִּשְׁפָּט וְחַטָּאִים בַּעֲדַת צַדִּיקִים׃',
-      'כִּי-יוֹדֵעַ יְהוָה דֶּרֶךְ צַדִּיקִים וְדֶרֶךְ רְשָׁעִים תֹּאבֵד׃',
-    ],
-    fr: [
-      'Heureux l\'homme qui ne marche pas selon le conseil des méchants, qui ne s\'arrête pas dans la voie des pécheurs, et qui ne s\'assied pas en compagnie des moqueurs,',
-      'mais qui trouve son plaisir dans la loi de l\'Éternel, et qui la médite jour et nuit !',
-      'Il est comme un arbre planté près d\'un courant d\'eau, qui donne son fruit en sa saison, et dont le feuillage ne se flétrit point : tout ce qu\'il fait lui réussit.',
-      'Il n\'en est pas ainsi des méchants : ils sont comme la balle que le vent emporte.',
-      'C\'est pourquoi les méchants ne résisteront pas au jour du jugement, ni les pécheurs dans l\'assemblée des justes.',
-      'Car l\'Éternel connaît la voie des justes, et la voie des méchants mène à la perdition.',
-    ],
-    rashi: [
-      'רש"י: אשרי האיש — אשרי לשון שמחה וברכה, ריבוי ברכות.',
-      'רש"י: בתורת ה\' חפצו — מלמד שהתורה נקראת על שמו של לומדה.',
-      'רש"י: כעץ שתול — עץ שתול עמוק יותר מנטוע.',
-      'רש"י: כמוץ — קל וחסר ממש, נפוץ לכל רוח.',
-      'רש"י: לא יקומו — לא יזכו לדין עם הצדיקים.',
-      'רש"י: יודע ה\' — השגחה פרטית על הצדיקים.',
-    ]
+    he: ['אַשְׁרֵי הָאִישׁ אֲשֶׁר לֹא הָלַךְ בַּעֲצַת רְשָׁעִים׃','כִּי אִם בְּתוֹרַת יְהוָה חֶפְצוֹ וּבְתוֹרָתוֹ יֶהְגֶּה יוֹמָם וָלָיְלָה׃','וְהָיָה כְּעֵץ שָׁתוּל עַל-פַּלְגֵי מָיִם׃','לֹא-כֵן הָרְשָׁעִים כִּי אִם-כַּמֹּץ׃','עַל-כֵּן לֹא-יָקֻמוּ רְשָׁעִים בַּמִּשְׁפָּט׃','כִּי-יוֹדֵעַ יְהוָה דֶּרֶךְ צַדִּיקִים׃'],
+    fr: ['Heureux l\'homme qui ne marche pas selon le conseil des méchants.','mais qui trouve son plaisir dans la loi de l\'Éternel, et qui la médite jour et nuit !','Il est comme un arbre planté près d\'un courant d\'eau.','Il n\'en est pas ainsi des méchants : ils sont comme la balle que le vent emporte.','C\'est pourquoi les méchants ne résisteront pas au jour du jugement.','Car l\'Éternel connaît la voie des justes, et la voie des méchants mène à la perdition.'],
+    rashi: ['רש"י: אשרי האיש — לשון שמחה וברכה.','רש"י: בתורת ה׳ חפצו — נקראת על שמו של לומדה.','רש"י: כעץ שתול — עמוק יותר מנטוע.','רש"י: כמוץ — קל וחסר ממש.','רש"י: לא יקומו — לא יזכו לדין.','רש"י: יודע ה׳ — השגחה פרטית.']
   },
   'Ruth.1': {
-    he: [
-      'וַיְהִי בִּימֵי שְׁפֹט הַשֹּׁפְטִים וַיְהִי רָעָב בָּאָרֶץ וַיֵּלֶךְ אִישׁ מִבֵּית לֶחֶם יְהוּדָה לָגוּר בִּשְׂדֵי מוֹאָב הוּא וְאִשְׁתּוֹ וּשְׁנֵי בָנָיו׃',
-      'וְשֵׁם הָאִישׁ אֱלִימֶלֶךְ וְשֵׁם אִשְׁתּוֹ נָעֳמִי וְשֵׁם שְׁנֵי-בָנָיו מַחְלוֹן וְכִלְיוֹן אֶפְרָתִים מִבֵּית לֶחֶם יְהוּדָה וַיָּבֹאוּ שְׂדֵי-מוֹאָב וַיִּהְיוּ-שָׁם׃',
-      'וַיָּמָת אֱלִימֶלֶךְ אִישׁ נָעֳמִי וַתִּשָּׁאֵר הִיא וּשְׁנֵי בָנֶיהָ׃',
-    ],
-    fr: [
-      'Du temps que gouvernaient les juges, il y eut une famine dans le pays. Un homme de Bethléhem en Juda s\'en alla avec sa femme et ses deux fils pour séjourner dans le pays de Moab.',
-      'Cet homme s\'appelait Elimélec, sa femme Naomi, et ses deux fils Mahlon et Kilion ; ils étaient Ephratiens, de Bethléhem en Juda. Ils arrivèrent dans le pays de Moab et s\'y établirent.',
-      'Elimélec, le mari de Naomi, mourut, et elle resta avec ses deux fils.',
-    ],
-    rashi: [
-      'רש"י: בימי שפוט השופטים — דור שפוט את שופטיו.',
-      'רש"י: אלימלך — שאמר לו המלכות שלי.',
-      'רש"י: וימת אלימלך — עונש על שעזב ארץ ישראל.',
-    ]
+    he: ['וַיְהִי בִּימֵי שְׁפֹט הַשֹּׁפְטִים וַיְהִי רָעָב בָּאָרֶץ׃','וְשֵׁם הָאִישׁ אֱלִימֶלֶךְ וְשֵׁם אִשְׁתּוֹ נָעֳמִי׃','וַיָּמָת אֱלִימֶלֶךְ אִישׁ נָעֳמִי׃'],
+    fr: ['Du temps que gouvernaient les juges, il y eut une famine dans le pays.','Cet homme s\'appelait Elimélec, sa femme Naomi.','Elimélec, le mari de Naomi, mourut.'],
+    rashi: ['רש"י: בימי שפוט — דור שפוט את שופטיו.','רש"י: אלימלך — שאמר לו המלכות שלי.','רש"י: וימת — עונש על שעזב ארץ ישראל.']
   }
 };
 
+// ═══════════════════════════════════════════════════════
+// NACH YOMI ENGINE
+// ═══════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
-const S = {
-  book: BOOKS[0],
-  chapter: 1,
+// Build the flat list of all chapters in order
+function buildChapterList() {
+  const list = [];
+  for (const b of BOOKS) {
+    for (let c = 1; c <= b.chapters; c++) {
+      list.push({ bookId: b.id, chapter: c });
+    }
+  }
+  return list;
+}
+const CHAPTER_LIST = buildChapterList(); // 907 items
+
+// Hebrew calendar helper — find next 1 Nisan on or after a JS Date
+function nextNisan(fromDate) {
+  // Simple approximation: Nisan 1 falls roughly on March 20 - April 20
+  // We use the Hebcal-style approximation: cycle year anchored to Nisan
+  // For a real app, integrate a Hebrew calendar lib. Here we use a pragmatic table.
+  const NISAN1 = [
+    // [gregorian year, month(0-based), day]
+    [2023, 2, 23], [2024, 3, 9], [2025, 2, 29], [2026, 3, 18],
+    [2027, 3, 7],  [2028, 3, 26],[2029, 3, 15], [2030, 3, 4],
+    [2031, 3, 23], [2032, 3, 12],[2033, 2, 31], [2034, 3, 20],
+  ];
+  const d = fromDate || new Date();
+  for (const [y, m, day] of NISAN1) {
+    const dt = new Date(y, m, day);
+    if (dt >= d) return dt;
+  }
+  // fallback
+  return new Date(d.getFullYear()+1, 3, 1);
+}
+
+function prevNisan(fromDate) {
+  const NISAN1 = [
+    [2023, 2, 23], [2024, 3, 9], [2025, 2, 29], [2026, 3, 18],
+    [2027, 3, 7],  [2028, 3, 26],[2029, 3, 15], [2030, 3, 4],
+  ];
+  const d = fromDate || new Date();
+  let last = null;
+  for (const [y, m, day] of NISAN1) {
+    const dt = new Date(y, m, day);
+    if (dt <= d) last = dt;
+  }
+  return last || new Date(d.getFullYear(), 2, 25);
+}
+
+// Given a start date and a target end date, compute chapters/day
+function chaptersPerDay(startDate, endDate) {
+  const days = Math.max(1, Math.round((endDate - startDate) / 86400000));
+  return TOTAL_CHAPTERS / days;
+}
+
+// Given cycle start and today, return the "expected" chapter index (0-based)
+function expectedChapterIndex(startDate, chPerDay) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(startDate); start.setHours(0,0,0,0);
+  const daysPassed = Math.max(0, Math.round((today - start) / 86400000));
+  return Math.min(TOTAL_CHAPTERS - 1, Math.floor(daysPassed * chPerDay));
+}
+
+// Today's assigned chapter(s) for the community cycle
+function todayAssignment(startDate, chPerDay) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(startDate); start.setHours(0,0,0,0);
+  const daysPassed = Math.max(0, Math.round((today - start) / 86400000));
+  const from = Math.floor(daysPassed * chPerDay);
+  const to = Math.floor((daysPassed + 1) * chPerDay);
+  const indices = [];
+  for (let i = from; i < Math.min(to + 1, TOTAL_CHAPTERS); i++) indices.push(i);
+  return indices.length ? indices : [Math.min(from, TOTAL_CHAPTERS-1)];
+}
+
+function dateToStr(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════
+// PERSISTENCE (localStorage)
+// ═══════════════════════════════════════════════════════
+const LS_KEY = 'tanakh_yomi_v2';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(P)); } catch(e) {}
+}
+
+// P = persistent state
+let P = loadState() || {
+  // chapter completion: { 'Joshua.1': true, ... }
+  done: {},
+  // cycle config
+  cycleType: null,       // 'community' | 'personal'
+  cycleStart: null,      // ISO date string
+  cycleEnd: null,        // ISO date string
+  // catchup
+  catchupActive: false,
+  catchupStart: null,
+  // settings
+  theme: 'light',
   showHeb: true,
   showFr: true,
   showRashi: false,
-  verses: null,
-  selectedVerseIdx: 0,
+  hebSize: 22,
+  frSize: 15,
+  hebFont: "'Frank Ruhl Libre', serif",
+  // streak
+  lastStudyDate: null,
+  streak: 0,
+  // current view
+  currentBook: 'Joshua',
+  currentChapter: 1,
 };
 
-// ═══════════════════════════════════════════
-// BUILD NAV
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  book: BOOKS.find(b=>b.id===P.currentBook) || BOOKS[0],
+  chapter: P.currentChapter || 1,
+  verses: null,
+  selectedVerseIdx: 0,
+  pendingCycleType: null,
+};
+
+// ═══════════════════════════════════════════════════════
+// CYCLE HELPERS
+// ═══════════════════════════════════════════════════════
+function getCycleStats() {
+  const doneCount = Object.keys(P.done).filter(k=>P.done[k]).length;
+  const left = TOTAL_CHAPTERS - doneCount;
+  const pct = Math.round(doneCount / TOTAL_CHAPTERS * 100);
+
+  // book progress
+  const bDone = Object.keys(P.done).filter(k=>P.done[k]&&k.startsWith(S.book.id+'.')).length;
+  const bPct = Math.round(bDone / S.book.chapters * 100);
+
+  // siyoum estimate
+  let siyoum = null, retard = 0;
+  if (P.cycleStart && P.cycleEnd) {
+    const start = new Date(P.cycleStart);
+    const end = new Date(P.cycleEnd);
+    const chpd = chaptersPerDay(start, end);
+    const expIdx = expectedChapterIndex(start, chpd);
+    retard = Math.max(0, expIdx + 1 - doneCount);
+
+    if (doneCount > 0 && left > 0) {
+      // actual pace
+      const today = new Date(); today.setHours(0,0,0,0);
+      const daysPassed = Math.max(1, Math.round((today - start)/86400000));
+      const pace = doneCount / daysPassed; // chapters/day
+      const daysLeft = Math.ceil(left / pace);
+      siyoum = addDays(today, daysLeft);
+    } else if (left === 0) {
+      siyoum = new Date();
+    } else {
+      siyoum = new Date(P.cycleEnd);
+    }
+  }
+
+  return { doneCount, left, pct, bDone, bPct, siyoum, retard };
+}
+
+function getTodayAssignment() {
+  if (!P.cycleStart) return null;
+  const start = new Date(P.cycleStart);
+  const end = P.cycleEnd ? new Date(P.cycleEnd) : addDays(start, 365);
+  const chpd = chaptersPerDay(start, end);
+  const indices = todayAssignment(start, chpd);
+  return indices.map(i => CHAPTER_LIST[i]).filter(Boolean);
+}
+
+function isChapterDone(bookId, ch) {
+  return !!P.done[`${bookId}.${ch}`];
+}
+
+function toggleChapterDone(bookId, ch) {
+  const key = `${bookId}.${ch}`;
+  P.done[key] = !P.done[key];
+  // update streak
+  const todayStr = new Date().toISOString().slice(0,10);
+  if (P.done[key]) {
+    if (P.lastStudyDate !== todayStr) {
+      const yesterday = addDays(new Date(), -1).toISOString().slice(0,10);
+      P.streak = (P.lastStudyDate === yesterday) ? (P.streak||0)+1 : 1;
+      P.lastStudyDate = todayStr;
+    }
+  }
+  saveState();
+  // check siyoum
+  const stats = getCycleStats();
+  if (stats.doneCount === TOTAL_CHAPTERS) {
+    document.getElementById('siyoum-modal').classList.add('show');
+  }
+  refreshAll();
+}
+
+// ═══════════════════════════════════════════════════════
+// UI REFRESH
+// ═══════════════════════════════════════════════════════
+function refreshAll() {
+  buildNav();
+  buildChapterNav();
+  updateBreadcrumb();
+  refreshCycleBar();
+  refreshYomiPanel();
+}
+
+function refreshCycleBar() {
+  const { doneCount, pct, siyoum } = getCycleStats();
+  document.getElementById('globalFill').style.width = pct+'%';
+  document.getElementById('doneCount').textContent = doneCount;
+  document.getElementById('totalCount').textContent = TOTAL_CHAPTERS;
+  document.getElementById('siyoumEst').textContent = siyoum ? dateToStr(siyoum).slice(0,6) : '—';
+  document.getElementById('cycleType').textContent = P.cycleType==='community' ? 'Communautaire' : P.cycleType==='personal' ? 'Personnel' : '—';
+}
+
+function refreshYomiPanel() {
+  const { doneCount, left, pct, bDone, bPct, siyoum, retard } = getCycleStats();
+
+  // Today's assignment
+  const assignment = getTodayAssignment();
+  if (assignment && assignment.length) {
+    const first = assignment[0];
+    const b = BOOKS.find(x=>x.id===first.bookId);
+    document.getElementById('todayHeb').textContent = `${b.heb} ${first.chapter}`;
+    document.getElementById('todayFr').textContent = `${b.fr}, chapitre ${first.chapter}`;
+    if (assignment.length > 1) {
+      const last = assignment[assignment.length-1];
+      const bl = BOOKS.find(x=>x.id===last.bookId);
+      document.getElementById('todayFr').textContent += ` → ${bl.fr} ${last.chapter}`;
+    }
+    document.getElementById('todayDate').textContent = dateToStr(new Date());
+  } else {
+    document.getElementById('todayHeb').textContent = P.cycleStart ? 'Cycle non démarré' : 'Aucun cycle actif';
+    document.getElementById('todayFr').textContent = 'Lancez un cycle pour commencer';
+    document.getElementById('todayDate').textContent = '';
+  }
+
+  // Book progress
+  document.getElementById('progBookName').textContent = S.book.fr;
+  document.getElementById('progBookPct').textContent = bPct+'%';
+  document.getElementById('progBookFill').style.width = bPct+'%';
+  document.getElementById('progNachPct').textContent = pct+'%';
+  document.getElementById('progNachFill').style.width = pct+'%';
+
+  // Stats
+  document.getElementById('statDone').textContent = doneCount;
+  document.getElementById('statLeft').textContent = left;
+  document.getElementById('statStreak').textContent = P.streak || 0;
+  document.getElementById('statRetard').textContent = retard;
+
+  // Catchup
+  const showCatchup = retard >= 3 && P.cycleStart;
+  document.getElementById('catchupBox').style.display = showCatchup ? 'block' : 'none';
+  document.getElementById('btnCatchup').style.display = showCatchup ? 'flex' : 'none';
+  if (showCatchup) {
+    const perDay = Math.ceil(retard / 7);
+    document.getElementById('catchupDesc').textContent =
+      `Vous avez ${retard} chapitre${retard>1?'s':''} de retard. Le mode rattrapage vous propose ${perDay} chapitre${perDay>1?'s':''} supplémentaire${perDay>1?'s':''} par jour pendant 7 jours.`;
+  }
+
+  // Siyoum
+  document.getElementById('siyoumDate').textContent = siyoum ? dateToStr(siyoum) : '—';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysToSiyoum = siyoum ? Math.max(0, Math.round((siyoum - today)/86400000)) : null;
+  document.getElementById('siyoumDays').textContent = daysToSiyoum !== null ? `dans ${daysToSiyoum} jour${daysToSiyoum!==1?'s':''}` : '';
+
+  // Cycle info
+  if (P.cycleStart) {
+    const typeLabel = P.cycleType==='community' ? 'Cycle communautaire' : 'Cycle personnel';
+    document.getElementById('cycleInfo').textContent =
+      `${typeLabel} — démarré le ${dateToStr(new Date(P.cycleStart))}`;
+  } else {
+    document.getElementById('cycleInfo').textContent = 'Aucun cycle actif';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════
 function buildNav() {
   const nav = document.getElementById('navSection');
   const sections = [...new Set(BOOKS.map(b=>b.section))];
+  const todayA = getTodayAssignment() || [];
+  const todayBookIds = new Set(todayA.map(a=>a.bookId));
+
   let html = '';
   sections.forEach(sec => {
     html += `<div class="section-label">${sec}</div>`;
     BOOKS.filter(b=>b.section===sec).forEach(b=>{
       const active = b.id===S.book.id ? 'active' : '';
+      const doneB = Object.keys(P.done).filter(k=>P.done[k]&&k.startsWith(b.id+'.')).length;
+      const pctB = Math.round(doneB/b.chapters*100);
+      const isToday = todayBookIds.has(b.id);
       html += `<div class="nav-item ${active}" onclick="selectBook('${b.id}')">
         <div>
           <span class="book-heb">${b.heb}</span>
           <span class="book-fr">${b.fr}</span>
         </div>
-        <span class="ch-count">${b.chapters}</span>
+        <div class="nav-item-right">
+          ${isToday ? `<span class="today-badge">aujourd'hui</span>` : `<span class="ch-count">${b.chapters}</span>`}
+          <div class="book-progress-bar"><div class="book-progress-fill" style="width:${pctB}%"></div></div>
+        </div>
       </div>`;
     });
   });
@@ -972,12 +880,22 @@ function buildNav() {
 function buildChapterNav() {
   const nav = document.getElementById('chapterNav');
   const total = S.book.chapters;
+  const todayA = getTodayAssignment() || [];
+  const todayChapters = new Set(todayA.filter(a=>a.bookId===S.book.id).map(a=>a.chapter));
+
   let html = `<span class="ch-label">Chapitre :</span>`;
-  const max = Math.min(total, 40);
-  for(let i=1;i<=max;i++){
-    html += `<button class="ch-btn ${i===S.chapter?'active':''}" onclick="selectChapter(${i})">${i}</button>`;
+  const max = Math.min(total, 50);
+  for (let i=1; i<=max; i++) {
+    const done = isChapterDone(S.book.id, i);
+    const isCurrent = i===S.chapter;
+    const isToday = todayChapters.has(i);
+    let cls = 'ch-btn';
+    if (isCurrent) cls += ' active';
+    else if (done) cls += ' done';
+    if (isToday && !isCurrent) cls += ' today-ch';
+    html += `<button class="${cls}" onclick="selectChapter(${i})">${i}</button>`;
   }
-  if(total>40) html += `<span class="ch-label" style="opacity:0.5;margin-left:4px">…+${total-40}</span>`;
+  if (total>50) html += `<span class="ch-label" style="opacity:0.5;margin-left:4px">…+${total-50}</span>`;
   nav.innerHTML = html;
 }
 
@@ -987,52 +905,40 @@ function updateBreadcrumb() {
   document.getElementById('bcCh').textContent = S.chapter;
 }
 
-// ═══════════════════════════════════════════
-// LOAD CHAPTER (Sefaria API + fallback démo)
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// LOAD CHAPTER
+// ═══════════════════════════════════════════════════════
 async function loadChapter() {
   document.getElementById('reader').innerHTML = '<div class="loading-msg">Chargement… <span class="spinner"></span></div>';
   document.getElementById('apiBadge').textContent = '● Chargement';
 
   const demoKey = `${S.book.id}.${S.chapter}`;
-  if(DEMO_TEXTS[demoKey]){
-    setTimeout(()=>{ renderVerses(DEMO_TEXTS[demoKey]); document.getElementById('apiBadge').textContent = '● Démo intégrée'; }, 200);
+  if (DEMO_TEXTS[demoKey]) {
+    setTimeout(()=>{ renderVerses(DEMO_TEXTS[demoKey]); document.getElementById('apiBadge').textContent = '● Démo'; }, 180);
     return;
   }
 
   try {
     const bookId = S.book.id.replace('-', ' ');
     const ref = encodeURIComponent(`${bookId} ${S.chapter}`);
-    const url = `https://www.sefaria.org/api/texts/${ref}?commentary=0&context=0&pad=0&wrapLinks=0`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetch(`https://www.sefaria.org/api/texts/${ref}?commentary=0&context=0&pad=0&wrapLinks=0`, { signal: AbortSignal.timeout(7000) });
+    if (!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-
     const he = Array.isArray(data.he) ? data.he : [];
     let fr = [];
-
-    // Try French translation
     try {
       const frRes = await fetch(`https://www.sefaria.org/api/texts/${ref}?lang=fr&commentary=0&context=0&pad=0`, { signal: AbortSignal.timeout(5000) });
-      if(frRes.ok){
-        const fd = await frRes.json();
-        if(Array.isArray(fd.text) && fd.text.length) fr = fd.text;
-      }
+      if (frRes.ok) { const fd = await frRes.json(); if (Array.isArray(fd.text)&&fd.text.length) fr = fd.text; }
     } catch(e){}
-
-    // Fallback English
-    if(!fr.length && Array.isArray(data.text)) fr = data.text;
-
-    if(!he.length) throw new Error('Texte vide');
+    if (!fr.length && Array.isArray(data.text)) fr = data.text;
+    if (!he.length) throw new Error('Texte vide');
     renderVerses({ he, fr, rashi:[] });
     document.getElementById('apiBadge').textContent = '● Sefaria ✓';
-
   } catch(err) {
-    document.getElementById('reader').innerHTML = `
-      <div class="loading-msg">
-        <p style="margin-bottom:16px">Connexion à Sefaria impossible.<br><span style="font-size:12px;opacity:0.6">${err.message}</span></p>
-        <button onclick="loadDemo()" style="padding:10px 24px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:var(--font-fr)">Charger texte de démonstration</button>
-      </div>`;
+    document.getElementById('reader').innerHTML = `<div class="loading-msg">
+      <p style="margin-bottom:14px">Connexion à Sefaria impossible.<br><span style="font-size:11px;opacity:0.6">${err.message}</span></p>
+      <button onclick="loadDemo()" style="padding:8px 20px;background:var(--accent);color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:var(--font-fr)">Charger démo</button>
+    </div>`;
     document.getElementById('apiBadge').textContent = '● Hors ligne';
   }
 }
@@ -1045,18 +951,15 @@ function loadDemo() {
   S.chapter = parseInt(ch);
   buildNav(); buildChapterNav(); updateBreadcrumb();
   renderVerses(DEMO_TEXTS[k]);
-  document.getElementById('apiBadge').textContent = '● Démo intégrée';
+  document.getElementById('apiBadge').textContent = '● Démo';
 }
 
-// ═══════════════════════════════════════════
-// RENDER VERSES
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
 function stripHtml(s){ return s ? String(s).replace(/<[^>]+>/g,'').trim() : ''; }
-
 function wrapWords(text) {
-  return text.split(/\s+/).filter(Boolean).map(w=>{
-    return `<span class="heb-word">${w} </span>`;
-  }).join('');
+  return text.split(/\s+/).filter(Boolean).map(w=>`<span class="heb-word">${w} </span>`).join('');
 }
 
 function renderVerses(data) {
@@ -1065,205 +968,293 @@ function renderVerses(data) {
   const heList = data.he||[];
   const frList = data.fr||[];
   const rashiList = data.rashi||[];
-  if(!heList.length){ reader.innerHTML='<div class="loading-msg">Aucun texte disponible pour ce chapitre.</div>'; return; }
+  if (!heList.length) { reader.innerHTML='<div class="loading-msg">Aucun texte disponible.</div>'; return; }
 
-  let html = '';
+  const done = isChapterDone(S.book.id, S.chapter);
+  let html = `<div class="chapter-header">
+    <div>
+      <span class="chapter-title">${S.book.heb} ${S.chapter}</span>
+      <span class="chapter-title-fr">${S.book.fr} — Chapitre ${S.chapter}</span>
+    </div>
+    <button class="done-toggle ${done?'done':''}" id="doneToggle" onclick="toggleChapterDone('${S.book.id}',${S.chapter})">
+      <span class="check">${done?'✓':'○'}</span>
+      ${done ? 'Étudié' : 'Marquer comme étudié'}
+    </button>
+  </div>`;
+
   heList.forEach((hv,i)=>{
     const fv = stripHtml(frList[i]||'');
     const rv = rashiList[i]||'';
     const hClean = stripHtml(hv);
     let cls = 'verse-block';
-    if(!S.showHeb && S.showFr) cls += ' fr-only';
-    else if(S.showHeb && !S.showFr) cls += ' heb-only';
+    if (!P.showHeb && P.showFr) cls += ' fr-only';
+    else if (P.showHeb && !P.showFr) cls += ' heb-only';
 
     html += `<div class="${cls}">`;
-
-    if(S.showHeb){
-      html += `<div class="col-heb"${!S.showFr?' style="border:none"':''}>
+    if (P.showHeb) {
+      html += `<div class="col-heb"${!P.showFr?' style="border:none"':''}>
         <div class="verse-num-heb">פסוק ${i+1}</div>
         <div class="heb-text">${wrapWords(hClean)}</div>
-        ${S.showRashi && rv ? `<div class="rashi-block"><div class="rashi-label">רש"י</div><div class="rashi-text">${rv}</div></div>` : ''}
+        ${P.showRashi && rv ? `<div class="rashi-block"><div class="rashi-label">רש"י</div><div class="rashi-text">${rv}</div></div>` : ''}
         <div class="verse-actions">
           <button class="va-btn" onclick="openShareForVerse(${i})">↑ Partager</button>
           <button class="va-btn" onclick="copyVerse(${i})">⎘ Copier</button>
         </div>
       </div>`;
     }
-
-    if(S.showFr){
+    if (P.showFr) {
       html += `<div class="col-fr">
         <div class="verse-num-fr">Verset ${i+1}</div>
-        <div class="fr-text">${fv||'<span class="fr-na">Traduction non disponible pour ce chapitre</span>'}</div>
+        <div class="fr-text">${fv||'<span class="fr-na">Traduction non disponible</span>'}</div>
       </div>`;
     }
-
     html += `</div>`;
   });
 
   reader.innerHTML = html;
 }
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // NAVIGATION
-// ═══════════════════════════════════════════
-function selectBook(id){
+// ═══════════════════════════════════════════════════════
+function selectBook(id) {
   S.book = BOOKS.find(b=>b.id===id);
   S.chapter = 1;
-  buildNav(); buildChapterNav(); updateBreadcrumb(); loadChapter();
+  P.currentBook = id; P.currentChapter = 1;
+  saveState();
+  refreshAll(); loadChapter();
 }
 
-function selectChapter(n){
+function selectChapter(n) {
   S.chapter = n;
+  P.currentChapter = n;
+  saveState();
   buildChapterNav(); updateBreadcrumb(); loadChapter();
 }
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// CYCLE MODAL
+// ═══════════════════════════════════════════════════════
+function openCycleModal(type) {
+  S.pendingCycleType = type;
+  closeAllPanels();
+  const modal = document.getElementById('modal');
+  const dateField = document.getElementById('modalDateField');
+  if (type === 'community') {
+    document.getElementById('modalTitle').textContent = 'Cycle communautaire';
+    const start = prevNisan(new Date());
+    const end = nextNisan(addDays(start, 1));
+    document.getElementById('modalDesc').textContent =
+      `Le cycle communautaire couvre l'ensemble du Nach (${TOTAL_CHAPTERS} chapitres) du 1er Nissan au 1er Nissan suivant. Démarrage : ${dateToStr(start)}.`;
+    dateField.style.display = 'none';
+  } else {
+    document.getElementById('modalTitle').textContent = 'Cycle personnel';
+    document.getElementById('modalDesc').textContent =
+      `Démarrez votre propre cycle à la date de votre choix. Le Nach sera distribué sur 365 jours (${TOTAL_CHAPTERS} chapitres).`;
+    dateField.style.display = 'block';
+    document.getElementById('modalDateInput').value = new Date().toISOString().slice(0,10);
+  }
+  modal.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function confirmCycle() {
+  const type = S.pendingCycleType;
+  let start, end;
+  if (type === 'community') {
+    start = prevNisan(new Date());
+    end = nextNisan(addDays(start, 1));
+  } else {
+    const val = document.getElementById('modalDateInput').value;
+    start = val ? new Date(val) : new Date();
+    end = addDays(start, 365);
+  }
+  P.cycleType = type;
+  P.cycleStart = start.toISOString().slice(0,10);
+  P.cycleEnd = end.toISOString().slice(0,10);
+  P.done = {};
+  P.streak = 0;
+  P.lastStudyDate = null;
+  saveState();
+  closeModal();
+  refreshAll();
+  showNotif('Cycle démarré ! ✓');
+}
+
+function resetProgress() {
+  if (!confirm('Réinitialiser toute la progression ? Cette action est irréversible.')) return;
+  P.done = {}; P.cycleType = null; P.cycleStart = null; P.cycleEnd = null;
+  P.streak = 0; P.lastStudyDate = null;
+  saveState(); refreshAll();
+  showNotif('Progression réinitialisée');
+}
+
+function activateCatchup() {
+  const { retard } = getCycleStats();
+  if (!retard) return;
+  P.catchupActive = true;
+  P.catchupStart = new Date().toISOString().slice(0,10);
+  saveState();
+  showNotif(`Mode rattrapage activé — ${Math.ceil(retard/7)} ch/jour pendant 7 jours`);
+  closeAllPanels();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function toggleCol(key, btn) {
+  P['show'+key] = !P['show'+key];
+  btn.classList.toggle('on');
+  saveState();
+  if (S.verses) renderVerses(S.verses);
+}
+
+function changeSize(type, delta) {
+  if (type==='heb') {
+    P.hebSize = Math.max(14, Math.min(34, P.hebSize+delta));
+    document.getElementById('sizeHebVal').textContent = P.hebSize;
+    document.documentElement.style.setProperty('--heb-size', P.hebSize+'px');
+  } else {
+    P.frSize = Math.max(11, Math.min(22, P.frSize+delta));
+    document.getElementById('sizeFrVal').textContent = P.frSize;
+    document.documentElement.style.setProperty('--fr-size', P.frSize+'px');
+  }
+  saveState();
+}
+
+function setFont(el) {
+  P.hebFont = el.dataset.font;
+  document.documentElement.style.setProperty('--font-heb', P.hebFont);
+  document.querySelectorAll('.font-option').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  saveState();
+}
+
+function setTheme(t, el) {
+  P.theme = t;
+  document.body.className = 'theme-'+t;
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════════
 // PANELS
-// ═══════════════════════════════════════════
-function togglePanel(name){
-  const ids = { settings:'panelSettings', share:'panelShare' };
+// ═══════════════════════════════════════════════════════
+function togglePanel(name) {
+  const ids = { yomi:'panelYomi', settings:'panelSettings', share:'panelShare' };
   const el = document.getElementById(ids[name]);
   const open = el.classList.contains('open');
   closeAllPanels();
-  if(!open){
+  if (!open) {
     el.classList.add('open');
     document.getElementById('overlay').classList.add('show');
-    const btn = document.getElementById('btn'+name[0].toUpperCase()+name.slice(1));
-    if(btn) btn.classList.add('active');
+    const btnId = { yomi:'btnYomi', settings:'btnSettings', share:'btnShare' }[name];
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+    if (name==='yomi') refreshYomiPanel();
   }
 }
 
-function closeAllPanels(){
+function closeAllPanels() {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));
   document.getElementById('overlay').classList.remove('show');
   document.querySelectorAll('.topbar-btn').forEach(b=>b.classList.remove('active'));
 }
 
-// ═══════════════════════════════════════════
-// SETTINGS ACTIONS
-// ═══════════════════════════════════════════
-function toggleCol(key, btn){
-  S['show'+key] = !S['show'+key];
-  btn.classList.toggle('on');
-  if(S.verses) renderVerses(S.verses);
-}
-
-function changeSize(type, delta){
-  if(type==='heb'){
-    const v = Math.max(14,Math.min(34,parseInt(document.getElementById('sizeHebVal').textContent)+delta));
-    document.getElementById('sizeHebVal').textContent = v;
-    document.documentElement.style.setProperty('--heb-size', v+'px');
-  } else {
-    const v = Math.max(11,Math.min(22,parseInt(document.getElementById('sizeFrVal').textContent)+delta));
-    document.getElementById('sizeFrVal').textContent = v;
-    document.documentElement.style.setProperty('--fr-size', v+'px');
-  }
-}
-
-function setFont(el){
-  const f = el.dataset.font;
-  document.documentElement.style.setProperty('--font-heb', f);
-  document.querySelectorAll('.font-option').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function setTheme(t, el){
-  document.body.className = 'theme-'+t;
-  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // SHARE
-// ═══════════════════════════════════════════
-function openShareForVerse(i){
-  if(!S.verses) return;
+// ═══════════════════════════════════════════════════════
+function openShareForVerse(i) {
+  if (!S.verses) return;
   S.selectedVerseIdx = i;
   const hv = stripHtml((S.verses.he||[])[i]||'');
   const fv = stripHtml((S.verses.fr||[])[i]||'');
   document.getElementById('vpHeb').textContent = hv.substring(0,70)+(hv.length>70?'…':'');
-  document.getElementById('vpFr').textContent = '"'+(fv.substring(0,90)+(fv.length>90?'…':'')+'"');
+  document.getElementById('vpFr').textContent = '"'+(fv.substring(0,80)+(fv.length>80?'…':''))+'"';
   document.getElementById('vpRef').textContent = `${S.book.fr} · ${S.chapter}:${i+1}`;
   togglePanel('share');
 }
 
-function setShareStyle(grad, el){
+function setShareStyle(grad, el) {
   document.getElementById('versePreview').style.background = grad;
   document.querySelectorAll('.style-swatch').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
 }
 
-function copyVerse(i){
-  if(!S.verses) return;
+function copyVerse(i) {
+  if (!S.verses) return;
   const hv = stripHtml((S.verses.he||[])[i]||'');
   const fv = stripHtml((S.verses.fr||[])[i]||'');
-  const txt = `${S.book.heb} ${S.chapter}:${i+1}\n${hv}\n\n${fv}\n\n— ${S.book.fr} ${S.chapter}:${i+1}`;
+  const txt = `${S.book.heb} ${S.chapter}:${i+1}\n${hv}\n\n${fv}`;
   navigator.clipboard?.writeText(txt).then(()=>showNotif('Verset copié ✓'));
 }
 
-function copyVerseText(){
-  const i = S.selectedVerseIdx;
-  copyVerse(i);
-}
+function copyVerseText() { copyVerse(S.selectedVerseIdx); }
 
-function shareWhatsApp(){
+function shareWhatsApp() {
   const i = S.selectedVerseIdx;
-  if(!S.verses) return;
+  if (!S.verses) return;
   const fv = stripHtml((S.verses.fr||[])[i]||'');
   const hv = stripHtml((S.verses.he||[])[i]||'');
   const txt = encodeURIComponent(`${hv}\n\n${fv}\n— ${S.book.fr} ${S.chapter}:${i+1}`);
   window.open(`https://wa.me/?text=${txt}`,'_blank');
 }
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // SEARCH
-// ═══════════════════════════════════════════
-function setupSearch(){
+// ═══════════════════════════════════════════════════════
+function setupSearch() {
   const input = document.getElementById('searchInput');
   const res = document.getElementById('searchResults');
-
   input.addEventListener('input', ()=>{
     const q = input.value.toLowerCase().trim();
-    if(!q){ res.classList.remove('open'); return; }
-
-    const matches = BOOKS.filter(b=>
-      b.fr.toLowerCase().includes(q) ||
-      b.heb.includes(q) ||
-      b.id.toLowerCase().includes(q)
-    ).slice(0,8);
-
-    if(!matches.length){ res.classList.remove('open'); return; }
-
+    if (!q) { res.classList.remove('open'); return; }
+    const matches = BOOKS.filter(b=>b.fr.toLowerCase().includes(q)||b.heb.includes(q)||b.id.toLowerCase().includes(q)).slice(0,8);
+    if (!matches.length) { res.classList.remove('open'); return; }
     res.innerHTML = matches.map(b=>`
       <div class="sr-item" onclick="selectBook('${b.id}');document.getElementById('searchInput').value='';document.getElementById('searchResults').classList.remove('open')">
-        <span class="book-heb" style="font-family:var(--font-heb);font-size:14px">${b.heb}</span> — ${b.fr}
+        <span style="font-family:var(--font-heb);font-size:14px">${b.heb}</span> — ${b.fr}
         <div class="sr-ref">${b.section} · ${b.chapters} chapitres</div>
       </div>`).join('');
     res.classList.add('open');
   });
-
   document.addEventListener('click', e=>{
-    if(!input.contains(e.target) && !res.contains(e.target)) res.classList.remove('open');
+    if (!input.contains(e.target)&&!res.contains(e.target)) res.classList.remove('open');
   });
 }
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // NOTIFICATION
-// ═══════════════════════════════════════════
-function showNotif(msg){
+// ═══════════════════════════════════════════════════════
+function showNotif(msg) {
   const n = document.getElementById('notif');
   n.textContent = msg;
   n.classList.add('show');
   setTimeout(()=>n.classList.remove('show'), 2500);
 }
 
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
-buildNav();
-buildChapterNav();
-updateBreadcrumb();
+// ═══════════════════════════════════════════════════════
+// INIT — restore saved settings
+// ═══════════════════════════════════════════════════════
+function applySettings() {
+  document.body.className = 'theme-'+(P.theme||'light');
+  document.documentElement.style.setProperty('--heb-size', (P.hebSize||22)+'px');
+  document.documentElement.style.setProperty('--fr-size', (P.frSize||15)+'px');
+  document.documentElement.style.setProperty('--font-heb', P.hebFont||"'Frank Ruhl Libre', serif");
+  document.getElementById('sizeHebVal').textContent = P.hebSize||22;
+  document.getElementById('sizeFrVal').textContent = P.frSize||15;
+  if (!P.showHeb) document.getElementById('togHeb').classList.remove('on');
+  if (!P.showFr) document.getElementById('togFr').classList.remove('on');
+  if (P.showRashi) document.getElementById('togRashi').classList.add('on');
+}
+
+applySettings();
 setupSearch();
+refreshAll();
 loadChapter();
 </script>
 </body>
