@@ -263,6 +263,118 @@ body.theme-night .catchup-desc { color:#fbbf24; }
 .siyoum-emoji { font-size:48px; margin-bottom:16px; }
 .siyoum-headline { font-family:var(--font-heb); font-size:26px; color:var(--accent); margin-bottom:8px; }
 .siyoum-sub { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE MOBILE
+   ═══════════════════════════════════════ */
+
+/* Bottom nav bar — mobile only */
+#bottomNav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 300;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.bnav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: var(--font-fr);
+  font-size: 10px;
+  transition: color 0.15s;
+  padding: 6px 4px;
+}
+
+.bnav-btn.active { color: var(--accent); }
+.bnav-btn .bnav-icon { font-size: 18px; line-height: 1; }
+.bnav-btn .bnav-label { font-size: 9px; letter-spacing: 0.3px; }
+
+/* Mobile sidebar = full-screen drawer */
+@media (max-width: 700px) {
+
+  body { height: 100dvh; }
+
+  #bottomNav { display: flex; }
+
+  /* hide desktop sidebar by default */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    width: 100vw;
+    max-width: 320px;
+    z-index: 450;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+  }
+
+  #sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* main takes full width */
+  #main { width: 100%; }
+
+  /* add bottom padding so content isnt hidden behind nav bar */
+  #reader { padding: 14px 14px 80px; }
+
+  /* topbar — hide desktop buttons, show menu icon */
+  #topbar { padding: 8px 12px; gap: 6px; }
+  .bc-fr, .bc-sep { display: none; }
+  .bc-heb { font-size: 16px; }
+  .bc-ch { font-size: 12px; }
+  .api-badge { display: none; }
+
+  /* hide desktop topbar buttons on mobile */
+  #btnYomi, #btnSettings, #btnShare, #btnCatchup { display: none !important; }
+
+  /* show hamburger */
+  #btnMenu { display: flex; }
+
+  /* panels go full width on mobile */
+  .panel { width: 100vw; max-width: 100vw; }
+
+  /* verse layout — stack on mobile */
+  .verse-block { grid-template-columns: 1fr !important; }
+  .col-heb { border-right: none !important; border-bottom: 1px solid var(--border); padding: 0 12px 8px; }
+  .col-fr { padding: 8px 12px 0; }
+
+  /* chapter header stacks */
+  .chapter-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .done-toggle { width: 100%; justify-content: center; padding: 10px; font-size: 13px; }
+
+  /* chapter nav bigger touch targets */
+  .ch-btn { min-width: 32px; height: 32px; font-size: 12px; }
+
+  /* modal full width */
+  .modal-box { width: calc(100vw - 32px); padding: 22px 18px; }
+  .siyoum-card { width: calc(100vw - 32px); padding: 28px 20px; }
+
+  /* verse actions always visible on mobile */
+  .verse-actions { opacity: 1; }
+
+  /* heb font slightly smaller */
+  :root { --heb-size: 20px; --fr-size: 14px; }
+}
+
+@media (max-width: 400px) {
+  :root { --heb-size: 18px; --fr-size: 13px; }
+  #reader { padding: 10px 10px 76px; }
+}
 </style>
 </head>
 <body class="theme-light">
@@ -302,6 +414,7 @@ body.theme-night .catchup-desc { color:#fbbf24; }
   <!-- MAIN -->
   <div id="main">
     <div id="topbar">
+      <button class="topbar-btn" id="btnMenu" onclick="toggleMobileSidebar()" style="display:none;padding:5px 8px">☰</button>
       <div class="breadcrumb">
         <span class="bc-heb" id="bcHeb">יְהוֹשֻׁעַ</span>
         <span class="bc-sep">·</span>
@@ -1056,11 +1169,18 @@ function openCycleModal(type) {
       `Le cycle communautaire couvre l'ensemble du Nach (${TOTAL_CHAPTERS} chapitres) du 1er Nissan au 1er Nissan suivant. Démarrage : ${dateToStr(start)}.`;
     dateField.style.display = 'none';
   } else {
+    const today = new Date();
+    const maxDate = addDays(today, 30);
+    const todayStr = today.toISOString().slice(0,10);
+    const maxStr = maxDate.toISOString().slice(0,10);
     document.getElementById('modalTitle').textContent = 'Cycle personnel';
     document.getElementById('modalDesc').textContent =
-      `Démarrez votre propre cycle à la date de votre choix. Le Nach sera distribué sur 365 jours (${TOTAL_CHAPTERS} chapitres).`;
+      `Choisissez une date de départ entre aujourd'hui et le ${dateToStr(maxDate)}. Le Nach (${TOTAL_CHAPTERS} chapitres) sera distribué sur 365 jours.`;
     dateField.style.display = 'block';
-    document.getElementById('modalDateInput').value = new Date().toISOString().slice(0,10);
+    const input = document.getElementById('modalDateInput');
+    input.value = todayStr;
+    input.min = todayStr;
+    input.max = maxStr;
   }
   modal.classList.add('show');
 }
@@ -1077,7 +1197,22 @@ function confirmCycle() {
     end = nextNisan(addDays(start, 1));
   } else {
     const val = document.getElementById('modalDateInput').value;
-    start = val ? new Date(val) : new Date();
+    if (!val) { showNotif('Veuillez choisir une date'); return; }
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const maxDate = addDays(today, 30); maxDate.setHours(0,0,0,0);
+    start = new Date(val); start.setHours(0,0,0,0);
+
+    if (start < today) {
+      showNotif('La date ne peut pas être dans le passé');
+      document.getElementById('modalDateInput').value = today.toISOString().slice(0,10);
+      return;
+    }
+    if (start > maxDate) {
+      showNotif('La date ne peut pas dépasser 30 jours');
+      document.getElementById('modalDateInput').value = maxDate.toISOString().slice(0,10);
+      return;
+    }
     end = addDays(start, 365);
   }
   P.cycleType = type;
@@ -1264,6 +1399,114 @@ applySettings();
 setupSearch();
 refreshAll();
 loadChapter();
+
+// ═══════════════════════════════════════════════════════
+// MOBILE HELPERS
+// ═══════════════════════════════════════════════════════
+function isMobile() { return window.innerWidth <= 700; }
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('show');
+  } else {
+    closeAllPanels();
+    sidebar.classList.add('mobile-open');
+    overlay.classList.add('show');
+  }
+  updateBottomNav();
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('overlay').classList.remove('show');
+  updateBottomNav();
+}
+
+function mobilePanelOpen(name) {
+  closeMobileSidebar();
+  togglePanel(name);
+  updateBottomNav();
+}
+
+function mobileToggleDone() {
+  // directly toggle current chapter
+  toggleChapterDone(S.book.id, S.chapter);
+  updateBottomNav();
+}
+
+function updateBottomNav() {
+  if (!isMobile()) return;
+  const isDone = isChapterDone(S.book.id, S.chapter);
+  const doneBtn = document.getElementById('bnavDone');
+  if (doneBtn) {
+    doneBtn.style.color = isDone ? 'var(--accent)' : '';
+    doneBtn.querySelector('.bnav-icon').textContent = isDone ? '✓' : '○';
+    doneBtn.querySelector('.bnav-label').textContent = isDone ? 'Étudié ✓' : 'Étudié';
+  }
+}
+
+// patch closeAllPanels to also close mobile sidebar
+const _origCloseAll = closeAllPanels;
+closeAllPanels = function() {
+  _origCloseAll();
+  closeMobileSidebar();
+};
+
+// patch selectBook and selectChapter to close sidebar on mobile
+const _origSelectBook = selectBook;
+selectBook = function(id) {
+  _origSelectBook(id);
+  if (isMobile()) closeMobileSidebar();
+  updateBottomNav();
+};
+
+const _origSelectChapter = selectChapter;
+selectChapter = function(n) {
+  _origSelectChapter(n);
+  updateBottomNav();
+};
+
+// on overlay click close sidebar too
+document.getElementById('overlay').addEventListener('click', () => {
+  closeMobileSidebar();
+});
+
+// show hamburger on mobile
+function handleResize() {
+  const menu = document.getElementById('btnMenu');
+  if (menu) menu.style.display = isMobile() ? 'flex' : 'none';
+  updateBottomNav();
+}
+window.addEventListener('resize', handleResize);
+handleResize();
 </script>
+
+<!-- BOTTOM NAV (mobile) -->
+<div id="bottomNav">
+  <button class="bnav-btn" id="bnavBooks" onclick="toggleMobileSidebar()">
+    <span class="bnav-icon">📚</span>
+    <span class="bnav-label">Livres</span>
+  </button>
+  <button class="bnav-btn" id="bnavYomi" onclick="mobilePanelOpen('yomi')">
+    <span class="bnav-icon">📅</span>
+    <span class="bnav-label">Nach Yomi</span>
+  </button>
+  <button class="bnav-btn" id="bnavDone" onclick="mobileToggleDone()">
+    <span class="bnav-icon">✓</span>
+    <span class="bnav-label">Étudié</span>
+  </button>
+  <button class="bnav-btn" id="bnavSettings" onclick="mobilePanelOpen('settings')">
+    <span class="bnav-icon">⚙</span>
+    <span class="bnav-label">Réglages</span>
+  </button>
+  <button class="bnav-btn" id="bnavShare" onclick="mobilePanelOpen('share')">
+    <span class="bnav-icon">↑</span>
+    <span class="bnav-label">Partager</span>
+  </button>
+</div>
 </body>
 </html>
