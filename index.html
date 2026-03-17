@@ -349,7 +349,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 0;
     border-bottom: 1px solid var(--border);
-    padding: 16px 0;
+    padding: 6px 0;
     transition: background 0.12s;
     border-radius: 4px;
   }
@@ -400,17 +400,7 @@
     cursor: default;
     display: inline;
     padding: 0 2px;
-    border-radius: 3px;
-    transition: background 0.1s;
   }
-
-  .heb-word.has-def {
-    cursor: pointer;
-    text-decoration: underline dotted var(--accent);
-    text-underline-offset: 3px;
-  }
-
-  .heb-word.has-def:hover { background: var(--accent-light); }
 
   .fr-text {
     font-family: var(--font-fr);
@@ -470,46 +460,7 @@
 
   .va-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-  /* ── TOOLTIP ── */
-  #tooltip {
-    position: fixed;
-    background: var(--surface);
-    border: 1.5px solid var(--accent);
-    border-radius: 12px;
-    padding: 12px 16px;
-    box-shadow: var(--shadow);
-    z-index: 1000;
-    max-width: 220px;
-    pointer-events: none;
-    display: none;
-    backdrop-filter: blur(4px);
-  }
 
-  #tooltip.visible { display: block; }
-
-  .tt-word {
-    font-family: var(--font-heb);
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--accent);
-    direction: rtl;
-    line-height: 1.4;
-    margin-bottom: 4px;
-  }
-
-  .tt-root {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 4px;
-    direction: rtl;
-    text-align: right;
-  }
-
-  .tt-def {
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.5;
-  }
 
   /* ── PANEL (Settings / Share) ── */
   .panel {
@@ -877,12 +828,6 @@
   </div>
 </div>
 
-<!-- TOOLTIP -->
-<div id="tooltip">
-  <div class="tt-word" id="ttWord"></div>
-  <div class="tt-root" id="ttRoot"></div>
-  <div class="tt-def" id="ttDef"></div>
-</div>
 
 <!-- NOTIFICATION -->
 <div id="notif"></div>
@@ -987,38 +932,6 @@ const DEMO_TEXTS = {
   }
 };
 
-const DICT = {
-  'וַיְהִי':{ root:'היה', def:'Et il arriva / et il fut' },
-  'יְהוָה':{ root:'יהוה', def:'L\'Éternel — le Tétragramme divin' },
-  'אֱלֹהִים':{ root:'אל', def:'Dieu (pluriel de majesté)' },
-  'מֹשֶׁה':{ root:'משה', def:'Moïse — "tiré des eaux"' },
-  'תּוֹרָה':{ root:'ירה', def:'Torah — enseignement, loi divine' },
-  'אֶרֶץ':{ root:'ארץ', def:'terre, pays, sol' },
-  'שָׁמַיִם':{ root:'שמם', def:'cieux, firmament' },
-  'בְּרֵאשִׁית':{ root:'ראש', def:'au commencement, en tête' },
-  'בָּרָא':{ root:'ברא', def:'créer (ex nihilo)' },
-  'אוֹר':{ root:'אור', def:'lumière, clarté' },
-  'טוֹב':{ root:'טוב', def:'bon, beau, agréable' },
-  'לֵאמֹר':{ root:'אמר', def:'en disant, pour dire' },
-  'חָזַק':{ root:'חזק', def:'fort, solide, courageux' },
-  'אֶחָד':{ root:'אחד', def:'un, unique' },
-  'כֹּל':{ root:'כלל', def:'tout, la totalité' },
-  'מֶלֶךְ':{ root:'מלך', def:'roi, souverain' },
-  'עַם':{ root:'עמם', def:'peuple, nation' },
-  'בְּנֵי':{ root:'בנה', def:'fils de, enfants de' },
-  'יִשְׂרָאֵל':{ root:'שרה', def:'Israël — "qui lutte avec Dieu"' },
-  'דָּוִד':{ root:'—', def:'David — "aimé, bien-aimé"' },
-  'אַשְׁרֵי':{ root:'אשר', def:'heureux, béni — expression de félicité' },
-  'שָׁלוֹם':{ root:'שלם', def:'paix, intégrité, complétude' },
-  'חַיִּים':{ root:'חיה', def:'vie, vivants' },
-  'עוֹלָם':{ root:'עלם', def:'monde, éternité, univers' },
-  'אָמֵן':{ root:'אמן', def:'ainsi soit-il, véritablement' },
-  'בְּרִית':{ root:'ברה', def:'alliance, pacte' },
-  'קֹדֶשׁ':{ root:'קדש', def:'saint, sacré, consacré' },
-  'יְרוּשָׁלַיִם':{ root:'—', def:'Jérusalem — "fondement de la paix"' },
-  'נָבִיא':{ root:'נבא', def:'prophète, porte-parole divin' },
-  'רָעָב':{ root:'רעב', def:'famine, faim' },
-};
 
 // ═══════════════════════════════════════════
 // STATE
@@ -1142,9 +1055,7 @@ function stripHtml(s){ return s ? String(s).replace(/<[^>]+>/g,'').trim() : ''; 
 
 function wrapWords(text) {
   return text.split(/\s+/).filter(Boolean).map(w=>{
-    const clean = w.replace(/[׃:,;.!?׀]/g,'');
-    const hasDef = !!DICT[clean];
-    return `<span class="heb-word${hasDef?' has-def':''}"${hasDef?` data-w="${clean}"`:''}>${w} </span>`;
+    return `<span class="heb-word">${w} </span>`;
   }).join('');
 }
 
@@ -1190,30 +1101,6 @@ function renderVerses(data) {
   });
 
   reader.innerHTML = html;
-  attachTooltipEvents();
-}
-
-// ═══════════════════════════════════════════
-// TOOLTIP DICTIONNAIRE
-// ═══════════════════════════════════════════
-function attachTooltipEvents() {
-  const tt = document.getElementById('tooltip');
-  document.querySelectorAll('.heb-word.has-def').forEach(el=>{
-    el.addEventListener('mouseenter', e=>{
-      const w = e.target.dataset.w;
-      const info = DICT[w]; if(!info) return;
-      document.getElementById('ttWord').textContent = w;
-      document.getElementById('ttRoot').textContent = `שורש / racine : ${info.root}`;
-      document.getElementById('ttDef').textContent = info.def;
-      const r = e.target.getBoundingClientRect();
-      let top = r.bottom + 8, left = r.left;
-      if(left+230>window.innerWidth) left = window.innerWidth-240;
-      if(top+100>window.innerHeight) top = r.top-110;
-      tt.style.top = top+'px'; tt.style.left = left+'px';
-      tt.classList.add('visible');
-    });
-    el.addEventListener('mouseleave', ()=> tt.classList.remove('visible'));
-  });
 }
 
 // ═══════════════════════════════════════════
