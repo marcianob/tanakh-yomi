@@ -744,11 +744,11 @@ function isChapterDone(bookId, ch) {
 }
 
 function toggleChapterDone(bookId, ch) {
-  const key = `${bookId}.${ch}`;
+  const key = bookId + "." + ch;
   P.done[key] = !P.done[key];
-  // update streak
+  const isDone = P.done[key];
   const todayStr = new Date().toISOString().slice(0,10);
-  if (P.done[key]) {
+  if (isDone) {
     if (P.lastStudyDate !== todayStr) {
       const yesterday = addDays(new Date(), -1).toISOString().slice(0,10);
       P.streak = (P.lastStudyDate === yesterday) ? (P.streak||0)+1 : 1;
@@ -756,12 +756,20 @@ function toggleChapterDone(bookId, ch) {
     }
   }
   saveState();
-  // check siyoum
+  // update button in place — no full re-render
+  const btn = document.getElementById('doneToggle');
+  if (btn) {
+    btn.className = 'done-toggle' + (isDone ? ' done' : '');
+    btn.innerHTML = '<span class="check">' + (isDone ? '✓' : '○') + '</span> ' + (isDone ? 'Étudié' : 'Marquer comme étudié');
+  }
+  buildNav();
+  buildChapterNav();
+  refreshCycleBar();
   const stats = getCycleStats();
   if (stats.doneCount === TOTAL_CHAPTERS) {
     document.getElementById('siyoum-modal').classList.add('show');
   }
-  refreshAll();
+  showNotif(isDone ? 'Chapitre marqué comme étudié ✓' : 'Marqué comme non étudié');
 }
 
 // ═══════════════════════════════════════════════════════
