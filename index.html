@@ -1047,8 +1047,8 @@ function updateBreadcrumb() {
 // ═══════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════
-// MECHON MAMRE — Traduction du Rabbinat (Français)
-// URL: https://mechon-mamre.org/f/ft/ft{code}{ch2}.htm
+// MECHON MAMRE — Traduction du Rabbinat
+// Codes livres pour les URLs: ft{code}{ch2digits}.htm
 // ═══════════════════════════════════════════════════════
 const MM_CODES = {
   'Joshua':'06','Judges':'07','I-Samuel':'08','II-Samuel':'09',
@@ -1062,48 +1062,41 @@ const MM_CODES = {
   'I-Chronicles':'1l','II-Chronicles':'1m'
 };
 
-// CORS proxy — needed because mechon-mamre doesn't set CORS headers
-// We use allorigins.win which wraps the page content in JSON
-async function fetchMechonMamreFr(bookId, chapter) {
+async function fetchRabbinat(bookId, chapter) {
   const code = MM_CODES[bookId];
-  if (!code) throw new Error('Livre non trouvé dans Mechon Mamre');
+  if (!code) throw new Error('Livre non disponible');
   const ch2 = String(chapter).padStart(2, '0');
-  const targetUrl = `https://mechon-mamre.org/f/ft/ft${code}${ch2}.htm`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+  // Fetch directly — works from a real browser, mechon-mamre is public
+  const url = 'https://mechon-mamre.org/f/ft/ft' + code + ch2 + '.htm';
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const html = await res.text();
+  return parseRabbinat(html);
+}
 
-  const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error('Proxy HTTP ' + res.status);
-  const json = await res.json();
-  const html = json.contents || '';
-
-  // Parse — Mechon Mamre French structure:
-  // Each verse: <td class="fr">text</td> or plain <td> with verse text
-  // The page has a table with alternating Hebrew/French rows
-  // French verses are in <td> cells that don't have Hebrew characters
+function parseRabbinat(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-
   const verses = [];
-  // Each row has 2 tds: verse number + text (or heb + fr side by side)
-  // Mechon Mamre FR layout: table rows, each with <td class="fr1"> or <td class="fr2">
-  // Actually the layout uses <td> with the verse number then the text
-  // Let's extract all td content and filter by language
-  const tds = doc.querySelectorAll('td');
-  for (const td of tds) {
-    const txt = td.textContent.trim();
-    // Skip very short cells (verse numbers, empty)
-    if (txt.length < 5) continue;
-    // Skip cells that are mostly Hebrew (contain Hebrew Unicode range)
-    const hebChars = (txt.match(/[\u05D0-\u05EA\u05B0-\u05BD]/g) || []).length;
-    const totalChars = txt.replace(/\s/g, '').length;
-    if (hebChars / totalChars > 0.3) continue;
-    // Skip navigation, header cells
-    if (/mechon|mamre|chapitre|chapter|©|javascript/i.test(txt)) continue;
-    // Looks like a French verse
-    if (txt.length > 10) verses.push(txt);
+  // Mechon Mamre FR layout: <td class="fr1"> and <td class="fr2"> for French verses
+  // Also catches plain tds with French text (non-Hebrew content)
+  const frTds = doc.querySelectorAll('td.fr1, td.fr2');
+  if (frTds.length > 0) {
+    frTds.forEach(td => {
+      const txt = td.textContent.replace(/\s+/g, ' ').trim();
+      if (txt.length > 4) verses.push(txt);
+    });
+  } else {
+    // Fallback: parse all tds and filter French vs Hebrew
+    doc.querySelectorAll('td').forEach(td => {
+      const txt = td.textContent.replace(/\s+/g, ' ').trim();
+      if (txt.length < 8) return;
+      const hebChars = (txt.match(/[\u05D0-\u05EA]/g) || []).length;
+      if (hebChars / txt.replace(/\s/g,'').length > 0.15) return;
+      if (/mechon|mamre|©|next|prev|javascript|chapter/i.test(txt)) return;
+      verses.push(txt);
+    });
   }
-
-  if (!verses.length) throw new Error('Aucun verset français trouvé');
   return verses;
 }
 
@@ -1120,39 +1113,63 @@ async function loadChapter() {
   try {
     const bookId = S.book.id.replace(/-/g, ' ');
     const ref = encodeURIComponent(bookId + ' ' + S.chapter);
-    // Always fetch Hebrew from Sefaria
-    const res = await fetch('https://www.sefaria.org/api/texts/' + ref + '?commentary=0&context=0&pad=0&wrapLinks=0', { signal: AbortSignal.timeout(7000) });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const he = Array.isArray(data.he) ? data.he : [];
+    const lang = P.translationLang || 'fr';
+
+    // Fetch Hebrew + chosen translation in parallel
+    const hebPromise = fetch(
+      'https://www.sefaria.org/api/v3/texts/' + ref + '?version=he%7CWikisource+Tanach',
+      { signal: AbortSignal.timeout(8000) }
+    );
+
+    let transPromise;
+    if (lang === 'fr') {
+      // Traduction du Rabbinat — Mechon Mamre direct
+      transPromise = fetchRabbinat(S.book.id, S.chapter);
+    } else {
+      // English JPS — Sefaria v3
+      transPromise = fetch(
+        'https://www.sefaria.org/api/v3/texts/' + ref + '?version=en%7CThe+Koren+Jerusalem+Bible',
+        { signal: AbortSignal.timeout(8000) }
+      ).then(async r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        // v3 returns versions array
+        const ver = d.versions && d.versions[0];
+        return ver ? ver.text : [];
+      });
+    }
+
+    // Also get Hebrew from Sefaria v2 (reliable)
+    const hebRes = await fetch(
+      'https://www.sefaria.org/api/texts/' + ref + '?commentary=0&context=0&pad=0&wrapLinks=0',
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!hebRes.ok) throw new Error('Sefaria HTTP ' + hebRes.status);
+    const hebData = await hebRes.json();
+    const he = Array.isArray(hebData.he) ? hebData.he : [];
     if (!he.length) throw new Error('Texte hébreu vide');
 
     let translation = [];
-    const lang = P.translationLang || 'fr';
-
-    if (lang === 'fr') {
-      // French = Mechon Mamre (Traduction du Rabbinat)
-      try {
-        translation = await fetchMechonMamreFr(S.book.id, S.chapter);
-        document.getElementById('apiBadge').textContent = '● Rabbinat ✓';
-      } catch(e) {
-        console.warn('Mechon Mamre failed:', e.message, '— fallback Sefaria FR');
-        try {
-          const frRes = await fetch('https://www.sefaria.org/api/texts/' + ref + '?lang=fr&commentary=0&context=0&pad=0', { signal: AbortSignal.timeout(5000) });
-          if (frRes.ok) { const fd = await frRes.json(); if (Array.isArray(fd.text) && fd.text.length) translation = fd.text; }
-        } catch(e2){}
-        document.getElementById('apiBadge').textContent = translation.length ? '● Sefaria FR' : '● Sefaria';
+    try {
+      translation = await transPromise;
+      if (!Array.isArray(translation)) translation = [];
+      document.getElementById('apiBadge').textContent = lang === 'fr' ? '● Rabbinat ✓' : '● JPS ✓';
+    } catch(e) {
+      console.warn('Translation fetch failed:', e.message);
+      // Fallback: Sefaria v2 english as last resort
+      if (Array.isArray(hebData.text) && hebData.text.length) {
+        translation = hebData.text;
+        document.getElementById('apiBadge').textContent = '● Sefaria (EN fallback)';
+      } else {
+        document.getElementById('apiBadge').textContent = '● Hébreu uniquement';
       }
-    } else {
-      // English = Sefaria (JPS / standard)
-      if (Array.isArray(data.text) && data.text.length) translation = data.text;
-      document.getElementById('apiBadge').textContent = '● Sefaria EN ✓';
     }
 
     renderVerses({ he, fr: translation, rashi: [] });
   } catch(err) {
     document.getElementById('reader').innerHTML = '<div class="loading-msg">'
-      + '<p style="margin-bottom:14px">Connexion impossible.<br><span style="font-size:11px;opacity:0.6">' + err.message + '</span></p>'
+      + '<p style="margin-bottom:14px">Connexion impossible.<br>'
+      + '<span style="font-size:11px;opacity:0.6">' + err.message + '</span></p>'
       + '<button onclick="loadDemo()" style="padding:8px 20px;background:var(--accent);color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:var(--font-fr)">Charger démo</button>'
       + '</div>';
     document.getElementById('apiBadge').textContent = '● Hors ligne';
