@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>תנ"ך Yomi — Plateforme d'étude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Assistant:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 230px;
+    --font-heb: 'Frank Ruhl Libre', serif;
+    --font-fr: 'Assistant', sans-serif;
+    --heb-size: 22px;
+    --fr-size: 15px;
+    --accent: #2d6a4f;
+    --accent-light: rgba(45,106,79,0.12);
+    --bg: #fafaf8;
+    --surface: #f4f4f0;
+    --text: #1c1c1a;
+    --muted: #6b6b65;
+    --border: rgba(0,0,0,0.09);
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: var(--font-fr);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── THEMES ── */
+  body.theme-sepia {
+    --bg: #f7efe0; --surface: #ede3ce; --text: #3a2e1e;
+    --muted: #7a6545; --accent: #8B5E3C; --accent-light: rgba(139,94,60,0.12);
+    --border: rgba(139,94,60,0.15);
+  }
+  body.theme-night {
+    --bg: #141420; --surface: #1e1e30; --text: #e2e2ef;
+    --muted: #9090b8; --accent: #7b9cda; --accent-light: rgba(123,156,218,0.15);
+    --border: rgba(255,255,255,0.08);
+  }
+
+  /* ── LAYOUT ── */
+  #layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.25s ease;
+  }
+
+  .sidebar-logo {
+    padding: 18px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-heb {
+    font-family: var(--font-heb);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .logo-sub {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo-name {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .logo-tagline {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .search-wrap {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: var(--font-fr);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  #searchResults {
+    position: absolute;
+    top: calc(100% - 4px);
+    left: 12px; right: 12px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 300;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+
+  #searchResults.open { display: block; }
+
+  .sr-item {
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sr-item:last-child { border-bottom: none; }
+  .sr-item:hover { background: var(--accent-light); }
+  .sr-ref { font-size: 10px; color: var(--accent); margin-top: 1px; }
+
+  .nav-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0 16px;
+  }
+
+  .nav-scroll::-webkit-scrollbar { width: 3px; }
+  .nav-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 14px 4px;
+    font-weight: 600;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.12s;
+    border-left: 3px solid transparent;
+  }
+
+  .nav-item:hover { background: var(--accent-light); }
+
+  .nav-item.active {
+    background: var(--accent-light);
+    border-left-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .nav-item .book-heb {
+    font-family: var(--font-heb);
+    font-size: 15px;
+    display: block;
+    line-height: 1.2;
+  }
+
+  .nav-item .book-fr {
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-top: 1px;
+  }
+
+  .nav-item.active .book-fr { color: var(--accent); opacity: 0.8; }
+  .nav-item .ch-count { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .bc-heb {
+    font-family: var(--font-heb);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .bc-sep { color: var(--muted); font-size: 13px; }
+
+  .bc-fr { font-size: 13px; color: var(--muted); }
+
+  .bc-ch {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .api-badge {
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .topbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: var(--font-fr);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .topbar-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .topbar-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── CHAPTER NAV ── */
+  #chapterNav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  #chapterNav::-webkit-scrollbar { height: 2px; }
+  #chapterNav::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .ch-label { font-size: 11px; color: var(--muted); white-space: nowrap; margin-right: 4px; }
+
+  .ch-btn {
+    min-width: 28px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--font-fr);
+    transition: all 0.12s;
+    padding: 0 4px;
+  }
+
+  .ch-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .ch-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── READER ── */
+  #reader {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 36px;
+  }
+
+  #reader::-webkit-scrollbar { width: 5px; }
+  #reader::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .loading-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .verse-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    transition: background 0.12s;
+    border-radius: 4px;
+  }
+
+  .verse-block:hover { background: var(--accent-light); }
+  .verse-block.heb-only, .verse-block.fr-only { grid-template-columns: 1fr; }
+
+  .col-heb {
+    direction: rtl;
+    text-align: right;
+    padding: 0 20px 0 12px;
+    border-right: 1px solid var(--border);
+  }
+
+  .verse-block.heb-only .col-heb,
+  .verse-block.fr-only .col-fr { border: none; }
+
+  .col-fr {
+    padding: 0 12px 0 20px;
+    direction: ltr;
+  }
+
+  .verse-num-heb {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    direction: rtl;
+  }
+
+  .verse-num-fr {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .heb-text {
+    font-family: var(--font-heb);
+    font-size: var(--heb-size);
+    line-height: 2;
+    color: var(--text);
+  }
+
+  .heb-word {
+    cursor: default;
+    display: inline;
+    padding: 0 2px;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+
+  .heb-word.has-def {
+    cursor: pointer;
+    text-decoration: underline dotted var(--accent);
+    text-underline-offset: 3px;
+  }
+
+  .heb-word.has-def:hover { background: var(--accent-light); }
+
+  .fr-text {
+    font-family: var(--font-fr);
+    font-size: var(--fr-size);
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .fr-na { opacity: 0.4; font-style: italic; font-size: 13px; }
+
+  .rashi-block {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    direction: rtl;
+    text-align: right;
+  }
+
+  .rashi-label {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .rashi-text {
+    font-family: var(--font-heb);
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-style: italic;
+  }
+
+  .verse-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    direction: rtl;
+  }
+
+  .verse-block:hover .verse-actions { opacity: 1; }
+
+  .va-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    color: var(--muted);
+    font-family: var(--font-fr);
+    transition: all 0.12s;
+  }
+
+  .va-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── TOOLTIP ── */
+  #tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    max-width: 220px;
+    pointer-events: none;
+    display: none;
+    backdrop-filter: blur(4px);
+  }
+
+  #tooltip.visible { display: block; }
+
+  .tt-word {
+    font-family: var(--font-heb);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    direction: rtl;
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+
+  .tt-root {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    direction: rtl;
+    text-align: right;
+  }
+
+  .tt-def {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ── PANEL (Settings / Share) ── */
+  .panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 270px;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+  }
+
+  .panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+  }
+
+  .panel-title { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  .close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+  }
+
+  .close-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .panel-body { padding: 18px; overflow-y: auto; flex: 1; }
+  .panel-body::-webkit-scrollbar { width: 3px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .setting-section { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+  .setting-section:first-child { margin-top: 0; }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-label { font-size: 13px; color: var(--text); }
+
+  .toggle {
+    width: 38px; height: 22px;
+    background: var(--border);
+    border-radius: 11px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: var(--accent); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle.on::after { transform: translateX(16px); }
+
+  .size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .size-label { font-size: 13px; color: var(--text); flex: 1; }
+
+  .size-btn {
+    width: 26px; height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    cursor: pointer;
+    color: var(--text);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+  }
+
+  .size-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .size-val { font-size: 13px; min-width: 28px; text-align: center; color: var(--accent); font-weight: 500; }
+
+  .font-option {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--text);
+    transition: all 0.12s;
+    font-family: var(--font-heb);
+    direction: rtl;
+    text-align: right;
+  }
+
+  .font-option:hover { border-color: var(--accent); }
+  .font-option.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .theme-row { display: flex; gap: 6px; margin-bottom: 6px; }
+
+  .theme-swatch {
+    flex: 1;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    font-size: 11px;
+    font-family: var(--font-fr);
+    transition: border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+  }
+
+  .theme-swatch.active { border-color: var(--accent) !important; }
+
+  /* ── SHARE PANEL ── */
+  .verse-preview {
+    border-radius: 12px;
+    padding: 22px 18px;
+    margin-bottom: 14px;
+    text-align: center;
+    background: linear-gradient(135deg, #1a2a4a, #2d4a8a);
+  }
+
+  .vp-heb { font-family: var(--font-heb); font-size: 18px; color: #e8f0f8; line-height: 1.8; direction: rtl; margin-bottom: 8px; }
+  .vp-fr { font-size: 12px; color: rgba(232,240,248,0.75); font-style: italic; margin-bottom: 8px; line-height: 1.5; }
+  .vp-ref { font-size: 10px; color: rgba(232,240,248,0.5); letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .style-row { display: flex; gap: 6px; margin-bottom: 14px; }
+
+  .style-swatch {
+    flex: 1;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    font-size: 10px;
+    font-family: var(--font-fr);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.9);
+    font-weight: 500;
+    transition: border-color 0.15s;
+  }
+
+  .style-swatch.active { border-color: white; }
+
+  .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .share-btn {
+    padding: 9px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--font-fr);
+    transition: all 0.12s;
+    text-align: center;
+  }
+
+  .share-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── NOTIFICATION ── */
+  #notif {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--accent);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: var(--font-fr);
+    box-shadow: var(--shadow);
+    z-index: 2000;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  #notif.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── OVERLAY ── */
+  #overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 400;
+    display: none;
+    backdrop-filter: blur(2px);
+  }
+
+  #overlay.show { display: block; }
+</style>
+</head>
+<body class="theme-light">
+
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-heb">תנ"ך</div>
+      <div class="logo-sub">
+        <div class="logo-name">Yomi</div>
+        <div class="logo-tagline">Plateforme d'étude</div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <input class="search-input" id="searchInput" placeholder="🔍  Livre, mot-clé, verset..." autocomplete="off">
+      <div id="searchResults"></div>
+    </div>
+
+    <div class="nav-scroll" id="navSection"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div class="breadcrumb">
+        <span class="bc-heb" id="bcHeb">יְהוֹשֻׁעַ</span>
+        <span class="bc-sep">·</span>
+        <span class="bc-fr" id="bcFr">Josué</span>
+        <span class="bc-sep">·</span>
+        <span class="bc-ch">Chapitre <span id="bcCh">1</span></span>
+      </div>
+      <span class="api-badge" id="apiBadge">● Sefaria</span>
+      <button class="topbar-btn" id="btnSettings" onclick="togglePanel('settings')">⚙ Paramètres</button>
+      <button class="topbar-btn" id="btnShare" onclick="togglePanel('share')">↑ Partager</button>
+    </div>
+
+    <!-- CHAPTER NAV -->
+    <div id="chapterNav"></div>
+
+    <!-- READER -->
+    <div id="reader">
+      <div class="loading-msg">Chargement du texte… <span class="spinner"></span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeAllPanels()"></div>
+
+<!-- SETTINGS PANEL -->
+<div class="panel" id="panelSettings">
+  <div class="panel-header">
+    <span class="panel-title">⚙ Paramètres d'affichage</span>
+    <button class="close-btn" onclick="togglePanel('settings')">×</button>
+  </div>
+  <div class="panel-body">
+    <div class="setting-section">Colonnes visibles</div>
+    <div class="setting-row">
+      <span class="setting-label">Hébreu (avec nikoud)</span>
+      <button class="toggle on" id="togHeb" onclick="toggleCol('Heb',this)"></button>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Traduction française</span>
+      <button class="toggle on" id="togFr" onclick="toggleCol('Fr',this)"></button>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Commentaire Rachi</span>
+      <button class="toggle" id="togRashi" onclick="toggleCol('Rashi',this)"></button>
+    </div>
+
+    <div class="setting-section">Taille de police</div>
+    <div class="size-row">
+      <span class="size-label">Hébreu</span>
+      <button class="size-btn" onclick="changeSize('heb',-2)">−</button>
+      <span class="size-val" id="sizeHebVal">22</span>px
+      <button class="size-btn" onclick="changeSize('heb',2)">+</button>
+    </div>
+    <div class="size-row">
+      <span class="size-label">Traduction</span>
+      <button class="size-btn" onclick="changeSize('fr',-1)">−</button>
+      <span class="size-val" id="sizeFrVal">15</span>px
+      <button class="size-btn" onclick="changeSize('fr',1)">+</button>
+    </div>
+
+    <div class="setting-section">Police hébraïque</div>
+    <div class="font-option active" data-font="'Frank Ruhl Libre', serif" onclick="setFont(this)">פרנק רוהל ליברה — Frank Ruhl Libre</div>
+    <div class="font-option" data-font="'Tinos', serif" style="font-family:'Tinos',serif" onclick="setFont(this)">טינוס — Tinos</div>
+    <div class="font-option" data-font="Georgia, serif" style="font-family:Georgia,serif" onclick="setFont(this)">ג'ורג'יה — Georgia</div>
+
+    <div class="setting-section">Thème de lecture</div>
+    <div class="theme-row">
+      <div class="theme-swatch active" style="background:#f4f4f0;color:#1c1c1a;border:2px solid var(--border)" onclick="setTheme('light',this)">☀ Clair</div>
+      <div class="theme-swatch" style="background:#ede3ce;color:#3a2e1e" onclick="setTheme('sepia',this)">🌅 Sépia</div>
+      <div class="theme-swatch" style="background:#1e1e30;color:#e2e2ef" onclick="setTheme('night',this)">🌙 Nuit</div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE PANEL -->
+<div class="panel" id="panelShare">
+  <div class="panel-header">
+    <span class="panel-title">↑ Partager un verset</span>
+    <button class="close-btn" onclick="togglePanel('share')">×</button>
+  </div>
+  <div class="panel-body">
+    <div class="setting-section">Aperçu</div>
+    <div class="verse-preview" id="versePreview">
+      <div class="vp-heb" id="vpHeb">וַיְהִי יְהוָה אֶת-יְהוֹשֻׁעַ</div>
+      <div class="vp-fr" id="vpFr">L'Éternel fut avec Josué</div>
+      <div class="vp-ref" id="vpRef">Josué · 6:27</div>
+    </div>
+
+    <div class="setting-section">Style visuel</div>
+    <div class="style-row">
+      <div class="style-swatch active" style="background:linear-gradient(135deg,#1a3a2a,#2d6a4f)" onclick="setShareStyle('linear-gradient(135deg,#1a3a2a,#2d6a4f)',this)">Forêt</div>
+      <div class="style-swatch" style="background:linear-gradient(135deg,#1a2a4a,#2d4a8a)" onclick="setShareStyle('linear-gradient(135deg,#1a2a4a,#2d4a8a)',this)">Océan</div>
+      <div class="style-swatch" style="background:linear-gradient(135deg,#3a1a1a,#8a2020)" onclick="setShareStyle('linear-gradient(135deg,#3a1a1a,#8a2020)',this)">Rubis</div>
+      <div class="style-swatch" style="background:linear-gradient(135deg,#2a1a3a,#5a2a8a)" onclick="setShareStyle('linear-gradient(135deg,#2a1a3a,#5a2a8a)',this)">Améthyste</div>
+    </div>
+
+    <div class="setting-section">Exporter</div>
+    <div class="share-grid">
+      <button class="share-btn" onclick="shareWhatsApp()">📱 WhatsApp</button>
+      <button class="share-btn" onclick="copyVerseText()">⎘ Copier texte</button>
+      <button class="share-btn" onclick="showNotif('Lien copié !')">🔗 Copier lien</button>
+      <button class="share-btn" onclick="showNotif('Téléchargement en cours…')">⬇ Image PNG</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip">
+  <div class="tt-word" id="ttWord"></div>
+  <div class="tt-root" id="ttRoot"></div>
+  <div class="tt-def" id="ttDef"></div>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const BOOKS = [
+  { id:'Joshua',    heb:'יְהוֹשֻׁעַ',    fr:'Josué',     section:"Nevi'im Rishonim", chapters:24 },
+  { id:'Judges',    heb:'שׁוֹפְטִים',    fr:'Juges',     section:"Nevi'im Rishonim", chapters:21 },
+  { id:'I-Samuel',  heb:'שְׁמוּאֵל א',  fr:'Samuel I',  section:"Nevi'im Rishonim", chapters:31 },
+  { id:'II-Samuel', heb:'שְׁמוּאֵל ב',  fr:'Samuel II', section:"Nevi'im Rishonim", chapters:24 },
+  { id:'I-Kings',   heb:'מְלָכִים א',   fr:'Rois I',    section:"Nevi'im Rishonim", chapters:22 },
+  { id:'II-Kings',  heb:'מְלָכִים ב',   fr:'Rois II',   section:"Nevi'im Rishonim", chapters:25 },
+  { id:'Isaiah',    heb:'יְשַׁעְיָהוּ', fr:'Isaïe',     section:"Nevi'im Aharonim", chapters:66 },
+  { id:'Jeremiah',  heb:'יִרְמְיָהוּ',  fr:'Jérémie',   section:"Nevi'im Aharonim", chapters:52 },
+  { id:'Ezekiel',   heb:'יְחֶזְקֵאל',  fr:'Ézéchiel',  section:"Nevi'im Aharonim", chapters:48 },
+  { id:'Hosea',     heb:'הוֹשֵׁעַ',     fr:'Osée',      section:"Nevi'im Aharonim", chapters:14 },
+  { id:'Amos',      heb:'עָמוֹס',       fr:'Amos',      section:"Nevi'im Aharonim", chapters:9  },
+  { id:'Psalms',    heb:'תְּהִלִּים',   fr:'Psaumes',   section:'Ketouvim',          chapters:150 },
+  { id:'Proverbs',  heb:'מִשְׁלֵי',     fr:'Proverbes', section:'Ketouvim',          chapters:31  },
+  { id:'Job',       heb:'אִיּוֹב',      fr:'Job',       section:'Ketouvim',          chapters:42  },
+  { id:'Ruth',      heb:'רוּת',         fr:'Ruth',      section:'Ketouvim',          chapters:4   },
+  { id:'Esther',    heb:'אֶסְתֵּר',     fr:'Esther',    section:'Ketouvim',          chapters:10  },
+  { id:'Daniel',    heb:'דָּנִיֵּאל',   fr:'Daniel',    section:'Ketouvim',          chapters:12  },
+  { id:'Ezra',      heb:'עֶזְרָא',      fr:'Esdras',    section:'Ketouvim',          chapters:10  },
+];
+
+const DEMO_TEXTS = {
+  'Joshua.1': {
+    he: [
+      'וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל-יְהוֹשֻׁעַ בִּן-נוּן מְשָׁרֵת מֹשֶׁה לֵאמֹר׃',
+      'מֹשֶׁה עַבְדִּי מֵת וְעַתָּה קוּם עֲבֹר אֶת-הַיַּרְדֵּן הַזֶּה אַתָּה וְכָל-הָעָם הַזֶּה אֶל-הָאָרֶץ אֲשֶׁר אָנֹכִי נֹתֵן לָהֶם לִבְנֵי יִשְׂרָאֵל׃',
+      'כָּל-מָקוֹם אֲשֶׁר תִּדְרֹךְ כַּף-רַגְלְכֶם בּוֹ לָכֶם נְתַתִּיו כַּאֲשֶׁר דִּבַּרְתִּי אֶל-מֹשֶׁה׃',
+      'חֲזַק וֶאֱמָץ כִּי אַתָּה תַּנְחִיל אֶת-הָעָם הַזֶּה אֶת-הָאָרֶץ אֲשֶׁר נִשְׁבַּעְתִּי לַאֲבוֹתָם לָתֵת לָהֶם׃',
+      'רַק חֲזַק וֶאֱמַץ מְאֹד לִשְׁמֹר לַעֲשׂוֹת כְּכָל-הַתּוֹרָה אֲשֶׁר צִוְּךָ מֹשֶׁה עַבְדִּי אַל-תָּסוּר מִמֶּנּוּ יָמִין וּשְׂמֹאוֹל לְמַעַן תַּשְׂכִּיל בְּכֹל אֲשֶׁר תֵּלֵךְ׃',
+      'לֹא-יָמוּשׁ סֵפֶר הַתּוֹרָה הַזֶּה מִפִּיךָ וְהָגִיתָ בוֹ יוֹמָם וָלַיְלָה לְמַעַן תִּשְׁמֹר לַעֲשׂוֹת כְּכָל-הַכָּתוּב בוֹ כִּי-אָז תַּצְלִיחַ אֶת-דְּרָכֶךָ וְאָז תַּשְׂכִּיל׃',
+      'הֲלוֹא צִוִּיתִיךָ חֲזַק וֶאֱמָץ אַל-תַּעֲרֹץ וְאַל-תֵּחָת כִּי עִמְּךָ יְהוָה אֱלֹהֶיךָ בְּכֹל אֲשֶׁר תֵּלֵךְ׃',
+    ],
+    fr: [
+      'Après la mort de Moïse, serviteur de l\'Éternel, l\'Éternel dit à Josué, fils de Noun, serviteur de Moïse :',
+      'Moïse, mon serviteur, est mort. Maintenant, lève-toi, passe ce Jourdain, toi et tout ce peuple, vers le pays que je donne aux enfants d\'Israël.',
+      'Tout lieu que foulera la plante de vos pieds, je vous le donne, comme je l\'ai dit à Moïse.',
+      'Sois fort et courageux, car c\'est toi qui mettras ce peuple en possession du pays que j\'ai juré à leurs pères de leur donner.',
+      'Seulement, sois fort et très courageux, pour agir fidèlement selon toute la loi que Moïse, mon serviteur, t\'a prescrite. Ne t\'en détourne ni à droite ni à gauche, afin de réussir dans toutes tes entreprises.',
+      'Que ce livre de la loi ne s\'éloigne point de ta bouche ; médite-le jour et nuit, pour agir fidèlement selon tout ce qui y est écrit ; car c\'est alors que tu auras du succès dans tes entreprises, c\'est alors que tu réussiras.',
+      'Je te l\'ai commandé : sois fort et courageux. Ne t\'effraie point et ne t\'épouvante point, car l\'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprends.',
+    ],
+    rashi: [
+      'רש"י: אחרי מות משה — כל זמן שהיה משה קיים לא היה יהושע ראוי להנהיג, שנאמר ויהושע בן נון נער.',
+      'רש"י: קום עבר — ציווי לפעולה מיידית, שלא ישהה אלא יקום וילך.',
+      'רש"י: כל מקום — אפילו ברגל אחת, רמז שיכבוש את כולה.',
+      'רש"י: חזק ואמץ — חיזוק כפול, לאומץ הגוף ולאומץ הנפש.',
+      'רש"י: לא תסור ימין ושמאל — שלא לדרוש מה שאינו כתוב.',
+      'רש"י: ספר התורה — ספר התורה שמסר לו משה, ללמוד ולהגות בו יומם ולילה.',
+      'רש"י: כי עמך ה\' אלהיך — לכן אל תירא, שהוא עמך בכל מקום.',
+    ]
+  },
+  'Psalms.1': {
+    he: [
+      'אַשְׁרֵי הָאִישׁ אֲשֶׁר לֹא הָלַךְ בַּעֲצַת רְשָׁעִים וּבְדֶרֶךְ חַטָּאִים לֹא עָמָד וּבְמוֹשַׁב לֵצִים לֹא יָשָׁב׃',
+      'כִּי אִם בְּתוֹרַת יְהוָה חֶפְצוֹ וּבְתוֹרָתוֹ יֶהְגֶּה יוֹמָם וָלָיְלָה׃',
+      'וְהָיָה כְּעֵץ שָׁתוּל עַל-פַּלְגֵי מָיִם אֲשֶׁר פִּרְיוֹ יִתֵּן בְּעִתּוֹ וְעָלֵהוּ לֹא-יִבּוֹל וְכֹל אֲשֶׁר-יַעֲשֶׂה יַצְלִיחַ׃',
+      'לֹא-כֵן הָרְשָׁעִים כִּי אִם-כַּמֹּץ אֲשֶׁר-תִּדְּפֶנּוּ רוּחַ׃',
+      'עַל-כֵּן לֹא-יָקֻמוּ רְשָׁעִים בַּמִּשְׁפָּט וְחַטָּאִים בַּעֲדַת צַדִּיקִים׃',
+      'כִּי-יוֹדֵעַ יְהוָה דֶּרֶךְ צַדִּיקִים וְדֶרֶךְ רְשָׁעִים תֹּאבֵד׃',
+    ],
+    fr: [
+      'Heureux l\'homme qui ne marche pas selon le conseil des méchants, qui ne s\'arrête pas dans la voie des pécheurs, et qui ne s\'assied pas en compagnie des moqueurs,',
+      'mais qui trouve son plaisir dans la loi de l\'Éternel, et qui la médite jour et nuit !',
+      'Il est comme un arbre planté près d\'un courant d\'eau, qui donne son fruit en sa saison, et dont le feuillage ne se flétrit point : tout ce qu\'il fait lui réussit.',
+      'Il n\'en est pas ainsi des méchants : ils sont comme la balle que le vent emporte.',
+      'C\'est pourquoi les méchants ne résisteront pas au jour du jugement, ni les pécheurs dans l\'assemblée des justes.',
+      'Car l\'Éternel connaît la voie des justes, et la voie des méchants mène à la perdition.',
+    ],
+    rashi: [
+      'רש"י: אשרי האיש — אשרי לשון שמחה וברכה, ריבוי ברכות.',
+      'רש"י: בתורת ה\' חפצו — מלמד שהתורה נקראת על שמו של לומדה.',
+      'רש"י: כעץ שתול — עץ שתול עמוק יותר מנטוע.',
+      'רש"י: כמוץ — קל וחסר ממש, נפוץ לכל רוח.',
+      'רש"י: לא יקומו — לא יזכו לדין עם הצדיקים.',
+      'רש"י: יודע ה\' — השגחה פרטית על הצדיקים.',
+    ]
+  },
+  'Ruth.1': {
+    he: [
+      'וַיְהִי בִּימֵי שְׁפֹט הַשֹּׁפְטִים וַיְהִי רָעָב בָּאָרֶץ וַיֵּלֶךְ אִישׁ מִבֵּית לֶחֶם יְהוּדָה לָגוּר בִּשְׂדֵי מוֹאָב הוּא וְאִשְׁתּוֹ וּשְׁנֵי בָנָיו׃',
+      'וְשֵׁם הָאִישׁ אֱלִימֶלֶךְ וְשֵׁם אִשְׁתּוֹ נָעֳמִי וְשֵׁם שְׁנֵי-בָנָיו מַחְלוֹן וְכִלְיוֹן אֶפְרָתִים מִבֵּית לֶחֶם יְהוּדָה וַיָּבֹאוּ שְׂדֵי-מוֹאָב וַיִּהְיוּ-שָׁם׃',
+      'וַיָּמָת אֱלִימֶלֶךְ אִישׁ נָעֳמִי וַתִּשָּׁאֵר הִיא וּשְׁנֵי בָנֶיהָ׃',
+    ],
+    fr: [
+      'Du temps que gouvernaient les juges, il y eut une famine dans le pays. Un homme de Bethléhem en Juda s\'en alla avec sa femme et ses deux fils pour séjourner dans le pays de Moab.',
+      'Cet homme s\'appelait Elimélec, sa femme Naomi, et ses deux fils Mahlon et Kilion ; ils étaient Ephratiens, de Bethléhem en Juda. Ils arrivèrent dans le pays de Moab et s\'y établirent.',
+      'Elimélec, le mari de Naomi, mourut, et elle resta avec ses deux fils.',
+    ],
+    rashi: [
+      'רש"י: בימי שפוט השופטים — דור שפוט את שופטיו.',
+      'רש"י: אלימלך — שאמר לו המלכות שלי.',
+      'רש"י: וימת אלימלך — עונש על שעזב ארץ ישראל.',
+    ]
+  }
+};
+
+const DICT = {
+  'וַיְהִי':{ root:'היה', def:'Et il arriva / et il fut' },
+  'יְהוָה':{ root:'יהוה', def:'L\'Éternel — le Tétragramme divin' },
+  'אֱלֹהִים':{ root:'אל', def:'Dieu (pluriel de majesté)' },
+  'מֹשֶׁה':{ root:'משה', def:'Moïse — "tiré des eaux"' },
+  'תּוֹרָה':{ root:'ירה', def:'Torah — enseignement, loi divine' },
+  'אֶרֶץ':{ root:'ארץ', def:'terre, pays, sol' },
+  'שָׁמַיִם':{ root:'שמם', def:'cieux, firmament' },
+  'בְּרֵאשִׁית':{ root:'ראש', def:'au commencement, en tête' },
+  'בָּרָא':{ root:'ברא', def:'créer (ex nihilo)' },
+  'אוֹר':{ root:'אור', def:'lumière, clarté' },
+  'טוֹב':{ root:'טוב', def:'bon, beau, agréable' },
+  'לֵאמֹר':{ root:'אמר', def:'en disant, pour dire' },
+  'חָזַק':{ root:'חזק', def:'fort, solide, courageux' },
+  'אֶחָד':{ root:'אחד', def:'un, unique' },
+  'כֹּל':{ root:'כלל', def:'tout, la totalité' },
+  'מֶלֶךְ':{ root:'מלך', def:'roi, souverain' },
+  'עַם':{ root:'עמם', def:'peuple, nation' },
+  'בְּנֵי':{ root:'בנה', def:'fils de, enfants de' },
+  'יִשְׂרָאֵל':{ root:'שרה', def:'Israël — "qui lutte avec Dieu"' },
+  'דָּוִד':{ root:'—', def:'David — "aimé, bien-aimé"' },
+  'אַשְׁרֵי':{ root:'אשר', def:'heureux, béni — expression de félicité' },
+  'שָׁלוֹם':{ root:'שלם', def:'paix, intégrité, complétude' },
+  'חַיִּים':{ root:'חיה', def:'vie, vivants' },
+  'עוֹלָם':{ root:'עלם', def:'monde, éternité, univers' },
+  'אָמֵן':{ root:'אמן', def:'ainsi soit-il, véritablement' },
+  'בְּרִית':{ root:'ברה', def:'alliance, pacte' },
+  'קֹדֶשׁ':{ root:'קדש', def:'saint, sacré, consacré' },
+  'יְרוּשָׁלַיִם':{ root:'—', def:'Jérusalem — "fondement de la paix"' },
+  'נָבִיא':{ root:'נבא', def:'prophète, porte-parole divin' },
+  'רָעָב':{ root:'רעב', def:'famine, faim' },
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const S = {
+  book: BOOKS[0],
+  chapter: 1,
+  showHeb: true,
+  showFr: true,
+  showRashi: false,
+  verses: null,
+  selectedVerseIdx: 0,
+};
+
+// ═══════════════════════════════════════════
+// BUILD NAV
+// ═══════════════════════════════════════════
+function buildNav() {
+  const nav = document.getElementById('navSection');
+  const sections = [...new Set(BOOKS.map(b=>b.section))];
+  let html = '';
+  sections.forEach(sec => {
+    html += `<div class="section-label">${sec}</div>`;
+    BOOKS.filter(b=>b.section===sec).forEach(b=>{
+      const active = b.id===S.book.id ? 'active' : '';
+      html += `<div class="nav-item ${active}" onclick="selectBook('${b.id}')">
+        <div>
+          <span class="book-heb">${b.heb}</span>
+          <span class="book-fr">${b.fr}</span>
+        </div>
+        <span class="ch-count">${b.chapters}</span>
+      </div>`;
+    });
+  });
+  nav.innerHTML = html;
+}
+
+function buildChapterNav() {
+  const nav = document.getElementById('chapterNav');
+  const total = S.book.chapters;
+  let html = `<span class="ch-label">Chapitre :</span>`;
+  const max = Math.min(total, 40);
+  for(let i=1;i<=max;i++){
+    html += `<button class="ch-btn ${i===S.chapter?'active':''}" onclick="selectChapter(${i})">${i}</button>`;
+  }
+  if(total>40) html += `<span class="ch-label" style="opacity:0.5;margin-left:4px">…+${total-40}</span>`;
+  nav.innerHTML = html;
+}
+
+function updateBreadcrumb() {
+  document.getElementById('bcHeb').textContent = S.book.heb;
+  document.getElementById('bcFr').textContent = S.book.fr;
+  document.getElementById('bcCh').textContent = S.chapter;
+}
+
+// ═══════════════════════════════════════════
+// LOAD CHAPTER (Sefaria API + fallback démo)
+// ═══════════════════════════════════════════
+async function loadChapter() {
+  document.getElementById('reader').innerHTML = '<div class="loading-msg">Chargement… <span class="spinner"></span></div>';
+  document.getElementById('apiBadge').textContent = '● Chargement';
+
+  const demoKey = `${S.book.id}.${S.chapter}`;
+  if(DEMO_TEXTS[demoKey]){
+    setTimeout(()=>{ renderVerses(DEMO_TEXTS[demoKey]); document.getElementById('apiBadge').textContent = '● Démo intégrée'; }, 200);
+    return;
+  }
+
+  try {
+    const bookId = S.book.id.replace('-', ' ');
+    const ref = encodeURIComponent(`${bookId} ${S.chapter}`);
+    const url = `https://www.sefaria.org/api/texts/${ref}?commentary=0&context=0&pad=0&wrapLinks=0`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+
+    const he = Array.isArray(data.he) ? data.he : [];
+    let fr = [];
+
+    // Try French translation
+    try {
+      const frRes = await fetch(`https://www.sefaria.org/api/texts/${ref}?lang=fr&commentary=0&context=0&pad=0`, { signal: AbortSignal.timeout(5000) });
+      if(frRes.ok){
+        const fd = await frRes.json();
+        if(Array.isArray(fd.text) && fd.text.length) fr = fd.text;
+      }
+    } catch(e){}
+
+    // Fallback English
+    if(!fr.length && Array.isArray(data.text)) fr = data.text;
+
+    if(!he.length) throw new Error('Texte vide');
+    renderVerses({ he, fr, rashi:[] });
+    document.getElementById('apiBadge').textContent = '● Sefaria ✓';
+
+  } catch(err) {
+    document.getElementById('reader').innerHTML = `
+      <div class="loading-msg">
+        <p style="margin-bottom:16px">Connexion à Sefaria impossible.<br><span style="font-size:12px;opacity:0.6">${err.message}</span></p>
+        <button onclick="loadDemo()" style="padding:10px 24px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:var(--font-fr)">Charger texte de démonstration</button>
+      </div>`;
+    document.getElementById('apiBadge').textContent = '● Hors ligne';
+  }
+}
+
+function loadDemo() {
+  const keys = Object.keys(DEMO_TEXTS);
+  const k = keys.find(k=>k.startsWith(S.book.id)) || keys[0];
+  const [bid,ch] = k.split('.');
+  S.book = BOOKS.find(b=>b.id===bid)||S.book;
+  S.chapter = parseInt(ch);
+  buildNav(); buildChapterNav(); updateBreadcrumb();
+  renderVerses(DEMO_TEXTS[k]);
+  document.getElementById('apiBadge').textContent = '● Démo intégrée';
+}
+
+// ═══════════════════════════════════════════
+// RENDER VERSES
+// ═══════════════════════════════════════════
+function stripHtml(s){ return s ? String(s).replace(/<[^>]+>/g,'').trim() : ''; }
+
+function wrapWords(text) {
+  return text.split(/\s+/).filter(Boolean).map(w=>{
+    const clean = w.replace(/[׃:,;.!?׀]/g,'');
+    const hasDef = !!DICT[clean];
+    return `<span class="heb-word${hasDef?' has-def':''}"${hasDef?` data-w="${clean}"`:''}>${w} </span>`;
+  }).join('');
+}
+
+function renderVerses(data) {
+  S.verses = data;
+  const reader = document.getElementById('reader');
+  const heList = data.he||[];
+  const frList = data.fr||[];
+  const rashiList = data.rashi||[];
+  if(!heList.length){ reader.innerHTML='<div class="loading-msg">Aucun texte disponible pour ce chapitre.</div>'; return; }
+
+  let html = '';
+  heList.forEach((hv,i)=>{
+    const fv = stripHtml(frList[i]||'');
+    const rv = rashiList[i]||'';
+    const hClean = stripHtml(hv);
+    let cls = 'verse-block';
+    if(!S.showHeb && S.showFr) cls += ' fr-only';
+    else if(S.showHeb && !S.showFr) cls += ' heb-only';
+
+    html += `<div class="${cls}">`;
+
+    if(S.showHeb){
+      html += `<div class="col-heb"${!S.showFr?' style="border:none"':''}>
+        <div class="verse-num-heb">פסוק ${i+1}</div>
+        <div class="heb-text">${wrapWords(hClean)}</div>
+        ${S.showRashi && rv ? `<div class="rashi-block"><div class="rashi-label">רש"י</div><div class="rashi-text">${rv}</div></div>` : ''}
+        <div class="verse-actions">
+          <button class="va-btn" onclick="openShareForVerse(${i})">↑ Partager</button>
+          <button class="va-btn" onclick="copyVerse(${i})">⎘ Copier</button>
+        </div>
+      </div>`;
+    }
+
+    if(S.showFr){
+      html += `<div class="col-fr">
+        <div class="verse-num-fr">Verset ${i+1}</div>
+        <div class="fr-text">${fv||'<span class="fr-na">Traduction non disponible pour ce chapitre</span>'}</div>
+      </div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  reader.innerHTML = html;
+  attachTooltipEvents();
+}
+
+// ═══════════════════════════════════════════
+// TOOLTIP DICTIONNAIRE
+// ═══════════════════════════════════════════
+function attachTooltipEvents() {
+  const tt = document.getElementById('tooltip');
+  document.querySelectorAll('.heb-word.has-def').forEach(el=>{
+    el.addEventListener('mouseenter', e=>{
+      const w = e.target.dataset.w;
+      const info = DICT[w]; if(!info) return;
+      document.getElementById('ttWord').textContent = w;
+      document.getElementById('ttRoot').textContent = `שורש / racine : ${info.root}`;
+      document.getElementById('ttDef').textContent = info.def;
+      const r = e.target.getBoundingClientRect();
+      let top = r.bottom + 8, left = r.left;
+      if(left+230>window.innerWidth) left = window.innerWidth-240;
+      if(top+100>window.innerHeight) top = r.top-110;
+      tt.style.top = top+'px'; tt.style.left = left+'px';
+      tt.classList.add('visible');
+    });
+    el.addEventListener('mouseleave', ()=> tt.classList.remove('visible'));
+  });
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function selectBook(id){
+  S.book = BOOKS.find(b=>b.id===id);
+  S.chapter = 1;
+  buildNav(); buildChapterNav(); updateBreadcrumb(); loadChapter();
+}
+
+function selectChapter(n){
+  S.chapter = n;
+  buildChapterNav(); updateBreadcrumb(); loadChapter();
+}
+
+// ═══════════════════════════════════════════
+// PANELS
+// ═══════════════════════════════════════════
+function togglePanel(name){
+  const ids = { settings:'panelSettings', share:'panelShare' };
+  const el = document.getElementById(ids[name]);
+  const open = el.classList.contains('open');
+  closeAllPanels();
+  if(!open){
+    el.classList.add('open');
+    document.getElementById('overlay').classList.add('show');
+    const btn = document.getElementById('btn'+name[0].toUpperCase()+name.slice(1));
+    if(btn) btn.classList.add('active');
+  }
+}
+
+function closeAllPanels(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));
+  document.getElementById('overlay').classList.remove('show');
+  document.querySelectorAll('.topbar-btn').forEach(b=>b.classList.remove('active'));
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS ACTIONS
+// ═══════════════════════════════════════════
+function toggleCol(key, btn){
+  S['show'+key] = !S['show'+key];
+  btn.classList.toggle('on');
+  if(S.verses) renderVerses(S.verses);
+}
+
+function changeSize(type, delta){
+  if(type==='heb'){
+    const v = Math.max(14,Math.min(34,parseInt(document.getElementById('sizeHebVal').textContent)+delta));
+    document.getElementById('sizeHebVal').textContent = v;
+    document.documentElement.style.setProperty('--heb-size', v+'px');
+  } else {
+    const v = Math.max(11,Math.min(22,parseInt(document.getElementById('sizeFrVal').textContent)+delta));
+    document.getElementById('sizeFrVal').textContent = v;
+    document.documentElement.style.setProperty('--fr-size', v+'px');
+  }
+}
+
+function setFont(el){
+  const f = el.dataset.font;
+  document.documentElement.style.setProperty('--font-heb', f);
+  document.querySelectorAll('.font-option').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setTheme(t, el){
+  document.body.className = 'theme-'+t;
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════
+function openShareForVerse(i){
+  if(!S.verses) return;
+  S.selectedVerseIdx = i;
+  const hv = stripHtml((S.verses.he||[])[i]||'');
+  const fv = stripHtml((S.verses.fr||[])[i]||'');
+  document.getElementById('vpHeb').textContent = hv.substring(0,70)+(hv.length>70?'…':'');
+  document.getElementById('vpFr').textContent = '"'+(fv.substring(0,90)+(fv.length>90?'…':'')+'"');
+  document.getElementById('vpRef').textContent = `${S.book.fr} · ${S.chapter}:${i+1}`;
+  togglePanel('share');
+}
+
+function setShareStyle(grad, el){
+  document.getElementById('versePreview').style.background = grad;
+  document.querySelectorAll('.style-swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function copyVerse(i){
+  if(!S.verses) return;
+  const hv = stripHtml((S.verses.he||[])[i]||'');
+  const fv = stripHtml((S.verses.fr||[])[i]||'');
+  const txt = `${S.book.heb} ${S.chapter}:${i+1}\n${hv}\n\n${fv}\n\n— ${S.book.fr} ${S.chapter}:${i+1}`;
+  navigator.clipboard?.writeText(txt).then(()=>showNotif('Verset copié ✓'));
+}
+
+function copyVerseText(){
+  const i = S.selectedVerseIdx;
+  copyVerse(i);
+}
+
+function shareWhatsApp(){
+  const i = S.selectedVerseIdx;
+  if(!S.verses) return;
+  const fv = stripHtml((S.verses.fr||[])[i]||'');
+  const hv = stripHtml((S.verses.he||[])[i]||'');
+  const txt = encodeURIComponent(`${hv}\n\n${fv}\n— ${S.book.fr} ${S.chapter}:${i+1}`);
+  window.open(`https://wa.me/?text=${txt}`,'_blank');
+}
+
+// ═══════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════
+function setupSearch(){
+  const input = document.getElementById('searchInput');
+  const res = document.getElementById('searchResults');
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.toLowerCase().trim();
+    if(!q){ res.classList.remove('open'); return; }
+
+    const matches = BOOKS.filter(b=>
+      b.fr.toLowerCase().includes(q) ||
+      b.heb.includes(q) ||
+      b.id.toLowerCase().includes(q)
+    ).slice(0,8);
+
+    if(!matches.length){ res.classList.remove('open'); return; }
+
+    res.innerHTML = matches.map(b=>`
+      <div class="sr-item" onclick="selectBook('${b.id}');document.getElementById('searchInput').value='';document.getElementById('searchResults').classList.remove('open')">
+        <span class="book-heb" style="font-family:var(--font-heb);font-size:14px">${b.heb}</span> — ${b.fr}
+        <div class="sr-ref">${b.section} · ${b.chapters} chapitres</div>
+      </div>`).join('');
+    res.classList.add('open');
+  });
+
+  document.addEventListener('click', e=>{
+    if(!input.contains(e.target) && !res.contains(e.target)) res.classList.remove('open');
+  });
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATION
+// ═══════════════════════════════════════════
+function showNotif(msg){
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildNav();
+buildChapterNav();
+updateBreadcrumb();
+setupSearch();
+loadChapter();
+</script>
+</body>
+</html>
